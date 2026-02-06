@@ -1,6 +1,5 @@
 FROM node:20-bullseye
 
-# Install Chrome dependencies required by Puppeteer
 RUN apt-get update && apt-get install -y \
   ca-certificates \
   fonts-liberation \
@@ -26,25 +25,20 @@ RUN apt-get update && apt-get install -y \
   libxshmfence1 \
   libxss1 \
   libxtst6 \
+  libxkbcommon0 \
+  libgtk-3-0 \
   xdg-utils \
   wget \
   --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Copy package.json from server
 COPY package*.json ./
-
-# Install dependencies (prod only)
 RUN npm ci --omit=dev
-
-# Copy all server files
 COPY . .
 
 ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_DOWNLOAD=false
 
-EXPOSE 3000
-
-CMD ["npm", "start"]
+EXPOSE 3001
+CMD ["npm","start"]
