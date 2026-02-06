@@ -190,6 +190,40 @@ app.post('/api/customers', async (req, res) => {
     }
 });
 
+// Delete Customer
+app.delete('/api/customers/:no_rek', async (req, res) => {
+    const { no_rek } = req.params;
+    try {
+        const customer = await Customer.findByPk(no_rek);
+        if (!customer) return res.status(404).json({ error: 'Customer not found' });
+        
+        await customer.destroy();
+        res.json({ success: true, message: 'Customer deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Bulk Delete Customers
+app.post('/api/customers/bulk-delete', async (req, res) => {
+    try {
+        const { no_reks } = req.body;
+        if (!Array.isArray(no_reks)) {
+            return res.status(400).json({ error: 'Invalid input' });
+        }
+        
+        await Customer.destroy({
+            where: {
+                no_rek: no_reks
+            }
+        });
+        
+        res.json({ success: true, count: no_reks.length });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Bulk Import Customers
 app.post('/api/customers/bulk', async (req, res) => {
     try {

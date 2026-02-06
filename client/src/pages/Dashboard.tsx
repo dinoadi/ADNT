@@ -104,9 +104,18 @@ const Dashboard = () => {
 
   // Stats Logic
   const totalCustomers = customers.length;
+  
+  // Payment Status Counts
   const doneCustomers = customers.filter(c => ['DONE', 'POTONG MANUAL'].includes(c.payment_status)).length;
   const pendingCustomers = customers.filter(c => c.payment_status === 'BELUM BAYAR').length;
   
+  // Collection Rate (Amount Based)
+  const totalTarget = customers.reduce((sum, c) => sum + (Number(c.tagihan_pokok) || 0) + (Number(c.tagihan_bunga) || 0), 0);
+  const totalCollected = customers
+    .filter(c => ['DONE', 'POTONG MANUAL'].includes(c.payment_status))
+    .reduce((sum, c) => sum + (Number(c.tagihan_pokok) || 0) + (Number(c.tagihan_bunga) || 0), 0);
+  const collectionRate = totalTarget > 0 ? (totalCollected / totalTarget) * 100 : 0;
+
   const today = fmt(new Date());
   const isDue = (c: any, dateStr: string) => {
     if (!c.tanggal_jt) return false;
@@ -118,9 +127,18 @@ const Dashboard = () => {
   const dueToday = customers.filter(c => isDue(c, today));
 
   const totalOutstanding = customers.reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+  
+  // Robust NPL Calculation
   const nplOutstanding = customers
-      .filter(c => (Number(c.kolek) || 1) > 2)
+      .filter(c => {
+        // Parse string like "3 - Kurang Lancar" or "Kolek 5"
+        const strKolek = String(c.kolek);
+        const match = strKolek.match(/\d+/);
+        const k = match ? parseInt(match[0]) : 1;
+        return k > 2; // Kolek 3, 4, 5
+      })
       .reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+      
   const nplRatio = totalOutstanding > 0 ? (nplOutstanding / totalOutstanding) * 100 : 0;
 
   const colorMap: any = {
@@ -251,8 +269,8 @@ const Dashboard = () => {
                       icon={CheckCircle} 
                       colorClass="emerald"
                       gradient="from-emerald-500 to-teal-500" 
-                      subValue={`${totalCustomers ? ((doneCustomers/totalCustomers)*100).toFixed(0) : 0}%`}
-                      subLabel="Rate"
+                      subValue={`${collectionRate.toFixed(1)}%`}
+                      subLabel="Repayment Rate"
                     />
                     <StatCard 
                       title="Belum Bayar" 

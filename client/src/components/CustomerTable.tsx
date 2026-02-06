@@ -83,6 +83,36 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
       }
   };
 
+  const handleBulkDelete = async () => {
+      if (selectedIds.length === 0) return;
+      if (!window.confirm(`Apakah Anda yakin ingin menghapus ${selectedIds.length} data nasabah yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
+
+      try {
+          await axios.post(`${API_URL}/api/customers/bulk-delete`, {
+              no_reks: selectedIds
+          });
+          alert('Berhasil menghapus data terpilih!');
+          setSelectedIds([]);
+          fetchCustomers();
+      } catch (error) {
+          console.error('Bulk delete failed:', error);
+          alert('Gagal melakukan hapus massal.');
+      }
+  };
+
+  const handleDelete = async (customer: any) => {
+      if (!window.confirm(`Apakah Anda yakin ingin menghapus data nasabah ${customer.nama} (${customer.no_rek})?`)) return;
+
+      try {
+          await axios.delete(`${API_URL}/api/customers/${customer.no_rek}`);
+          alert('Data nasabah berhasil dihapus');
+          fetchCustomers();
+      } catch (error) {
+          console.error('Delete failed:', error);
+          alert('Gagal menghapus data nasabah');
+      }
+  };
+
   const computeAmount = (c: any, dateStr?: string) => {
     const jt = c.tanggal_jt ? new Date(c.tanggal_jt).getDate() : null;
     const selectedDay = dateStr ? new Date(dateStr).getDate() : null;
@@ -265,21 +295,72 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                 }
             }
 
+            // Helper to parse numbers (handling ID/EN formats)
+            const parseNumber = (val: any) => {
+                if (typeof val === 'number') return val;
+                if (typeof val === 'string') {
+                    // Remove currency symbols and whitespace
+                    let clean = val.replace(/[Rp\sIDR]/g, '');
+                    
+                    // Handle "1.000.000,00" (ID) vs "1,000,000.00" (EN)
+                    // If multiple dots, they are thousands separators -> remove them
+                    if ((clean.match(/\./g) || []).length > 1) {
+                        clean = clean.replace(/\./g, '');
+                        clean = clean.replace(',', '.'); // Comma becomes decimal
+                    } 
+                    // If multiple commas, they are thousands separators -> remove them
+                    else if ((clean.match(/,/g) || []).length > 1) {
+                        clean = clean.replace(/,/g, '');
+                    }
+                    // Single dot and Single comma
+                    else if (clean.includes('.') && clean.includes(',')) {
+                        if (clean.lastIndexOf(',') > clean.lastIndexOf('.')) {
+                            // 1.000,00 -> ID
+                            clean = clean.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            // 1,000.00 -> EN
+                            clean = clean.replace(/,/g, '');
+                        }
+                    }
+                    // Ambiguous cases (single dot or single comma)
+                    else if (clean.includes('.')) {
+                        // "10.000" -> 10000 (ID) or 10 (EN)?
+                        // Assume ID format for money if it looks like integer
+                        clean = clean.replace(/\./g, '');
+                    }
+                    else if (clean.includes(',')) {
+                        // "10,5" -> 10.5
+                        clean = clean.replace(',', '.');
+                    }
+                    
+                    return parseFloat(clean) || 0;
+                }
+                return 0;
+            };
+
             return {
                 no_rek: findVal(['NO_REK', 'REK', 'ACCOUNT', 'LOAN_ID', 'NOMOR_REKENING']) || '',
                 nama: findVal(['NM_SINGKAT', 'NAMA', 'NAME', 'CUSTOMER_NAME', 'DEBITUR', 'NAMA_NASABAH']) || '',
                 no_cif: String(findVal(['NO_CIF', 'CIF', 'CUSTOMER_ID', 'NOMOR_CIF']) || ''),
-                saldo_awal: findVal(['SALDO_AWAL', 'OS_AWAL', 'INITIAL_BALANCE']) || findVal(['SALDO_AKHIR', 'OS_AKHIR', 'BAKI_DEBET', 'OUTSTANDING']) || 0,
-                saldo_akhir: findVal(['SALDO_AKHIR', 'OS_AKHIR', 'BAKI_DEBET', 'OUTSTANDING']) || 0,
-                tagihan_pokok: findVal(['TAGIHAN_POKOK', 'ANGSURAN_POKOK', 'PRINCIPAL_DUE']) || 0,
-                tagihan_bunga: findVal(['TAGIHAN_BUNGA', 'ANGSURAN_BUNGA', 'INTEREST_DUE']) || 0,
-                tunggakan_pokok: findVal(['TUNGGAKAN_POKOK', 'POKOK_TUNGGAKAN', 'ARREARS_PRINCIPAL']) || 0,
-                tunggakan_bunga: findVal(['TUNGGAKAN_BUNGA', 'BUNGA_TUNGGAKAN', 'ARREARS_INTEREST']) || 0,
+                saldo_awal: parseNumber(findVal(['SALDO_AWAL', 'OS_AWAL', 'INITIAL_BALANCE']) || findVal(['SALDO_AKHIR', 'OS_AKHIR', 'BAKI_DEBET', 'OUTSTANDING'])),
+                saldo_akhir: parseNumber(findVal(['SALDO_AKHIR', 'OS_AKHIR', 'BAKI_DEBET', 'OUTSTANDING'])),
+                tagihan_pokok: parseNumber(findVal(['TAGIHAN_POKOK', 'ANGSURAN_POKOK', 'PRINCIPAL_DUE'])),
+                tagihan_bunga: parseNumber(findVal(['TAGIHAN_BUNGA', 'ANGSURAN_BUNGA', 'INTEREST_DUE'])),
+                tunggakan_pokok: parseNumber(findVal(['TUNGGAKAN_POKOK', 'POKOK_TUNGGAKAN', 'ARREARS_PRINCIPAL'])),
+                tunggakan_bunga: parseNumber(findVal(['TUNGGAKAN_BUNGA', 'BUNGA_TUNGGAKAN', 'ARREARS_INTEREST'])),
                 kolek: parsedKolek,
                 tanggal_jt: parsedDate,
                 status_pinjaman: findVal(['STATUS', 'KET', 'STATUS_REKENING', 'KETERANGAN']) || '',
-                payment_status: 'BELUM BAYAR',
-                no_hp: findVal(['NO_HP', 'HP', 'PHONE', 'MOBILE', 'TELP', 'TELEPON', 'CONTACT', 'NO_TELP']) || ''
+                payment_status: (() => {
+                    const statusVal = String(findVal(['STATUS', 'KET', 'STATUS_REKENING', 'KETERANGAN', 'STATUS_BAYAR', 'PEMBAYARAN']) || '').toUpperCase();
+                    if (statusVal.includes('LUNAS') || statusVal.includes('SUDAH') || statusVal.includes('DONE') || statusVal.includes('PAID')) {
+                        return 'DONE';
+                    }
+                    // Also check if saldo_akhir is 0, assume DONE? No, maybe just closed.
+                    // Let's stick to text status for now.
+                    return 'BELUM BAYAR';
+                })(),
+                no_hp: String(findVal(['NO_HP', 'HP', 'PHONE', 'MOBILE', 'TELP', 'TELEPON', 'CONTACT', 'NO_TELP']) || '')
             };
         });
 
@@ -367,6 +448,14 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                         title="Update Kolektibilitas Terpilih"
                     >
                         <Check size={14} />
+                    </button>
+                    <div className="h-4 w-px bg-indigo-200 mx-1"></div>
+                    <button 
+                        onClick={handleBulkDelete}
+                        className="p-1.5 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 transition-colors"
+                        title="Hapus Data Terpilih"
+                    >
+                        <Trash2 size={14} />
                     </button>
                 </div>
             )}
@@ -520,7 +609,7 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                                 onChange={(e) => handleStatusChange(c, e.target.value)}
                             >
                                 <option value="BELUM BAYAR">BELUM BAYAR</option>
-                                <option value="DONE">LUNAS</option>
+                                <option value="DONE">SUDAH BAYAR</option>
                                 <option value="POTONG MANUAL">POTONG MANUAL</option>
                             </select>
                             <ChevronDown size={14} className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-60 ${statusText}`} />
@@ -540,6 +629,13 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                                 title="Edit Data"
                             >
                                 <Edit2 size={18} />
+                            </button>
+                            <button 
+                                onClick={() => handleDelete(c)}
+                                className="p-2.5 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-500 hover:text-white transition-all shadow-sm hover:shadow-rose-500/30"
+                                title="Hapus Data"
+                            >
+                                <Trash2 size={18} />
                             </button>
                         </div>
                     </div>
