@@ -9,7 +9,7 @@ import { read, utils } from 'xlsx';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3001');
 
-const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetchCustomers }: any) => {
+const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetchCustomers, isCompact = false }: any) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [kolekFilter, setKolekFilter] = useState('ALL');
@@ -418,9 +418,69 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
     });
   };
 
-  return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+    if (isCompact) {
+      return (
+        <div className="space-y-2">
+            {filteredCustomers.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-sm">
+                    Tidak ada data nasabah
+                </div>
+            ) : (
+                filteredCustomers.map((c: any) => {
+                    const amount = computeAmount(c, selectedDate).toLocaleString();
+                    const isSelected = selectedIds.includes(c.no_rek);
+                    const statusColor = (c.kolek || 1) === 1 ? 'bg-emerald-500' :
+                                      (c.kolek || 1) === 2 ? 'bg-amber-500' : 'bg-rose-500';
+                    const statusBg = (c.kolek || 1) === 1 ? 'bg-emerald-50' :
+                                      (c.kolek || 1) === 2 ? 'bg-amber-50' : 'bg-rose-50';
+
+                    return (
+                        <div key={c.no_rek} className={`flex items-center p-3 rounded-xl border ${isSelected ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-100 bg-white'} shadow-sm transition-all hover:shadow-md`}>
+                            <div className={`w-1 self-stretch rounded-full ${statusColor} mr-3`}></div>
+                            <div className="flex-1 min-w-0 mr-2">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-bold text-slate-800 text-sm truncate pr-2">{c.nama}</h4>
+                                    <span className="font-mono text-xs font-bold text-slate-700 whitespace-nowrap">Rp {amount}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-0.5">
+                                    <span className="text-[10px] text-slate-400 font-mono truncate">{c.no_rek}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        {waReady && (
+                                            <button 
+                                                onClick={() => sendWhatsApp(c)}
+                                                className="p-1 rounded-full text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                                title="Kirim WA"
+                                            >
+                                                <MessageCircle size={14} />
+                                            </button>
+                                        )}
+                                        <select
+                                            className={`text-[10px] font-bold rounded px-1.5 py-0.5 border-none focus:ring-1 cursor-pointer ${
+                                                c.payment_status === 'DONE' ? 'bg-emerald-100 text-emerald-700' : 
+                                                c.payment_status === 'JANJI BAYAR' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-rose-100 text-rose-700'
+                                            }`}
+                                            value={c.payment_status}
+                                            onChange={(e) => handleStatusChange(c, e.target.value)}
+                                        >
+                                            <option value="BELUM BAYAR">BELUM</option>
+                                            <option value="JANJI BAYAR">JANJI</option>
+                                            <option value="DONE">LUNAS</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })
+            )}
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
            <h3 className="text-xl font-bold text-slate-800">Daftar Nasabah</h3>
            <p className="text-slate-500 text-sm font-medium">Kelola data nasabah dan status pembayaran</p>
@@ -557,7 +617,77 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                 {/* Left Colored Strip */}
                 <div className={`absolute top-0 left-0 w-1.5 h-full ${statusColor}`}></div>
                 
-                <div className="flex flex-col md:flex-row items-center gap-4 pl-2">
+                {/* Mobile View Layout */}
+                <div className="md:hidden w-full space-y-4 pl-3">
+                    <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-3">
+                            <input 
+                                type="checkbox" 
+                                className="w-5 h-5 mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                checked={isSelected}
+                                onChange={() => handleSelectOne(c.no_rek)}
+                            />
+                            <div>
+                                <h4 className="font-bold text-slate-800 text-lg leading-tight">{c.nama}</h4>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1.5">
+                                    <span className="font-mono bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{c.no_rek}</span>
+                                    {c.no_hp && (
+                                        <span className="flex items-center gap-1"><Phone size={10} /> {c.no_hp}</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <span className={`px-2 py-1 text-[10px] font-extrabold rounded-lg tracking-wide shrink-0 ${
+                            (c.kolek || 1) === 1 ? 'bg-emerald-100 text-emerald-600' :
+                            (c.kolek || 1) === 2 ? 'bg-amber-100 text-amber-600' :
+                            'bg-rose-100 text-rose-600'
+                        }`}>
+                            KOL {c.kolek || 1}
+                        </span>
+                    </div>
+
+                    <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <div>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Total Tagihan</p>
+                            <p className="font-mono font-bold text-slate-700 text-xl tracking-tight">Rp {computeAmount(c, selectedDate).toLocaleString()}</p>
+                        </div>
+                        <div className="text-right">
+                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Jatuh Tempo</p>
+                             <p className="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100 inline-block">{c.tanggal_jt}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                        <div className="relative flex-1">
+                             <select 
+                                className={`w-full py-3 pl-3 pr-8 rounded-xl text-xs font-bold appearance-none cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 border-none shadow-sm ${statusBg} ${statusText}`}
+                                value={c.payment_status}
+                                onChange={(e) => handleStatusChange(c, e.target.value)}
+                            >
+                                <option value="BELUM BAYAR">BELUM BAYAR</option>
+                                <option value="DONE">SUDAH BAYAR</option>
+                                <option value="POTONG MANUAL">POTONG MANUAL</option>
+                            </select>
+                            <ChevronDown size={14} className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-60 ${statusText}`} />
+                        </div>
+                        
+                        <button 
+                            onClick={() => sendWhatsApp(c)}
+                            className="p-3 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                        >
+                            <MessageCircle size={18} />
+                        </button>
+                        <button 
+                            onClick={() => openEditModal(c)}
+                            className="p-3 bg-indigo-100 text-indigo-600 rounded-xl hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
+                        >
+                             <Edit2 size={18} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Desktop View Layout */}
+                <div className="hidden md:flex items-center gap-4 pl-2">
                     {/* Checkbox */}
                     <div className="pr-2 border-r border-slate-100 mr-2 flex items-center justify-center">
                         <input 

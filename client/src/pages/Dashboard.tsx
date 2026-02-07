@@ -7,7 +7,7 @@ import CalendarView from '../components/CalendarView';
 import { 
   Users, CheckCircle, XCircle, Activity, Smartphone, LogOut, 
   Calendar, LayoutDashboard, QrCode, RefreshCw, ChevronRight,
-  CreditCard, Wallet, ArrowUpRight, ArrowDownRight, AlertTriangle
+  CreditCard, Wallet, ArrowUpRight, ArrowDownRight, AlertTriangle, Menu, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +22,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loadingQr, setLoadingQr] = useState(false);
   const [showQrScanner, setShowQrScanner] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
   const fmt = (d: Date) => {
     const y = d.getFullYear();
@@ -77,6 +79,11 @@ const Dashboard = () => {
       console.error('Update failed:', error);
       alert('Failed to update status');
     }
+  };
+
+  const handleDateSelect = (date: string) => {
+      setSelectedDate(date);
+      setIsDateModalOpen(true);
   };
 
   const handleLogout = () => {
@@ -153,99 +160,130 @@ const Dashboard = () => {
     const colors = colorMap[colorClass] || colorMap.indigo;
     
     return (
-    <div className={`relative p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:-translate-y-1 overflow-hidden group bg-white border border-slate-100`}>
-      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full transition-transform group-hover:scale-110`}></div>
+    <div className={`relative p-6 rounded-2xl shadow-lg shadow-slate-200/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 overflow-hidden group bg-white border border-slate-100`}>
+      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full transition-transform duration-500 group-hover:scale-110 blur-2xl`}></div>
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <div className={`p-3.5 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg ${colors.shadow}`}>
+          <div className={`p-3.5 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg ${colors.shadow} ring-4 ring-white`}>
             <Icon size={24} className="text-white" />
           </div>
           {subValue && (
-            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${colors.bg} ${colors.text} border ${colors.border} flex items-center gap-1`}>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${colors.bg} ${colors.text} border ${colors.border} flex items-center gap-1`}>
               {subValue} {subLabel}
             </span>
           )}
         </div>
-        <h3 className="text-slate-500 text-sm font-medium mb-1">{title}</h3>
-        <p className="text-3xl font-bold text-slate-800 tracking-tight">{value}</p>
+        <h3 className="text-slate-500 text-sm font-bold tracking-wide mb-1 uppercase opacity-80">{title}</h3>
+        <p className="text-3xl font-black text-slate-800 tracking-tight">{value}</p>
       </div>
     </div>
   )};
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] font-sans flex text-slate-800">
-        {/* Modern Dark Sidebar */}
-        <aside className="w-72 bg-[#0F172A] hidden md:flex flex-col fixed h-full z-20 shadow-2xl text-slate-300">
-            <div className="p-8 pb-4">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans flex text-slate-800 selection:bg-indigo-100 selection:text-indigo-700">
+        {/* Mobile Overlay */}
+        {isMobileMenuOpen && (
+            <div 
+                className="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-sm transition-opacity duration-300"
+                onClick={() => setIsMobileMenuOpen(false)}
+            />
+        )}
+
+        {/* Modern Dark Sidebar with Glassmorphism */}
+        <aside className={`w-72 bg-[#0F172A] flex flex-col fixed h-full z-50 shadow-2xl shadow-indigo-900/20 text-slate-300 transition-transform duration-300 ease-in-out md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} border-r border-slate-800`}>
+            <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none"></div>
+            <div className="p-8 pb-4 relative z-10">
+                {/* Mobile Close Button */}
+                <button 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="absolute top-4 right-4 md:hidden p-2 text-slate-400 hover:text-white bg-white/5 rounded-lg backdrop-blur-sm transition-colors"
+                >
+                    <X size={20} />
+                </button>
+
                 <div className="flex items-center gap-3 mb-10">
-                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white font-bold text-xl">
-                    A
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-40 rounded-full"></div>
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-500/30 text-white font-bold text-2xl relative z-10 border border-white/10">
+                        A
+                    </div>
                   </div>
                   <div>
-                    <h1 className="text-xl font-extrabold text-white tracking-tight">ADNT</h1>
-                    <p className="text-xs text-slate-400 font-medium">Automated Due Notice Tool</p>
+                    <h1 className="text-2xl font-black text-white tracking-tight">ADNT</h1>
+                    <p className="text-[10px] text-indigo-200/60 font-bold tracking-widest uppercase">Automated Tool</p>
                   </div>
                 </div>
 
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 px-2">Menu Utama</div>
                 <nav className="space-y-2">
                     <button 
-                        onClick={() => setActiveTab('dashboard')}
-                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'hover:bg-white/5 hover:text-white'}`}
+                        onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
+                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'hover:bg-white/5 hover:text-white'}`}
                     >
-                        <LayoutDashboard size={20} className={activeTab === 'dashboard' ? 'text-white' : 'text-slate-400 group-hover:text-white'} /> 
-                        <span className="font-medium">Dashboard</span>
+                        {activeTab === 'dashboard' && <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>}
+                        <LayoutDashboard size={20} className={activeTab === 'dashboard' ? 'text-white' : 'text-slate-400 group-hover:text-white transition-colors'} /> 
+                        <span className="font-medium relative z-10">Dashboard</span>
                         {activeTab === 'dashboard' && <ChevronRight size={16} className="ml-auto opacity-80" />}
                     </button>
                     <button 
-                        onClick={() => setActiveTab('calendar')}
-                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group ${activeTab === 'calendar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'hover:bg-white/5 hover:text-white'}`}
+                        onClick={() => { setActiveTab('calendar'); setIsMobileMenuOpen(false); }}
+                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${activeTab === 'calendar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'hover:bg-white/5 hover:text-white'}`}
                     >
-                        <Calendar size={20} className={activeTab === 'calendar' ? 'text-white' : 'text-slate-400 group-hover:text-white'} /> 
-                        <span className="font-medium">Kalender</span>
+                        {activeTab === 'calendar' && <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>}
+                        <Calendar size={20} className={activeTab === 'calendar' ? 'text-white' : 'text-slate-400 group-hover:text-white transition-colors'} /> 
+                        <span className="font-medium relative z-10">Kalender</span>
                         {activeTab === 'calendar' && <ChevronRight size={16} className="ml-auto opacity-80" />}
                     </button>
                     <button 
-                        onClick={() => setActiveTab('whatsapp')}
-                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group ${activeTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'hover:bg-white/5 hover:text-white'}`}
+                        onClick={() => { setActiveTab('whatsapp'); setIsMobileMenuOpen(false); }}
+                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${activeTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'hover:bg-white/5 hover:text-white'}`}
                     >
-                        <Smartphone size={20} className={activeTab === 'whatsapp' ? 'text-white' : 'text-slate-400 group-hover:text-white'} /> 
-                        <span className="font-medium">WhatsApp Connect</span>
-                        <div className={`ml-auto w-2 h-2 rounded-full ${waReady ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-rose-500'}`}></div>
+                        {activeTab === 'whatsapp' && <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>}
+                        <Smartphone size={20} className={activeTab === 'whatsapp' ? 'text-white' : 'text-slate-400 group-hover:text-white transition-colors'} /> 
+                        <span className="font-medium relative z-10">WhatsApp Connect</span>
+                        <div className={`ml-auto w-2.5 h-2.5 rounded-full ring-2 ring-[#0F172A] ${waReady ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse' : 'bg-rose-500'}`}></div>
                     </button>
                 </nav>
             </div>
 
-            <div className="mt-auto p-6 border-t border-slate-800/50">
+            <div className="mt-auto p-6 border-t border-slate-800/50 bg-[#0F172A]">
                 <button 
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 w-full px-4 py-3 rounded-xl transition-all duration-200 font-medium group"
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="flex items-center gap-3 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 w-full px-4 py-3 rounded-xl transition-all duration-200 font-medium group border border-transparent hover:border-rose-500/20"
                 >
-                    <LogOut size={20} className="text-slate-500 group-hover:text-rose-400" /> 
+                    <LogOut size={20} className="text-slate-500 group-hover:text-rose-400 transition-colors" /> 
                     <span>Keluar Aplikasi</span>
                 </button>
             </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 md:ml-72 p-8 bg-[#F1F5F9] min-h-screen">
+        <main className="flex-1 md:ml-72 p-4 md:p-8 bg-[#F8FAFC] min-h-screen overflow-x-hidden">
             {/* Header */}
-            <header className="flex justify-between items-center mb-10">
-                <div>
-                    <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                        {activeTab === 'dashboard' ? 'Overview' : activeTab === 'calendar' ? 'Kalender Penagihan' : 'WhatsApp Connection'}
-                    </h2>
-                    <p className="text-slate-500 mt-1 font-medium">
-                        {activeTab === 'whatsapp' ? 'Kelola koneksi WhatsApp Gateway' : 'Pantau performa penagihan hari ini'}
-                    </p>
+            <header className="flex flex-row justify-between items-center mb-6 md:mb-8 gap-4 sticky top-0 z-30 py-3 md:py-4 bg-[#F8FAFC]/80 backdrop-blur-xl -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200/50 transition-all duration-300">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        className="md:hidden p-2 rounded-xl bg-white shadow-sm text-slate-600 border border-slate-200"
+                    >
+                        <Menu size={20} />
+                    </button>
+                    <div>
+                        <h2 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
+                            {activeTab === 'dashboard' ? 'Overview' : activeTab === 'calendar' ? 'Kalender' : 'WhatsApp'}
+                        </h2>
+                        <p className="text-slate-500 font-medium text-xs md:text-base hidden md:block">
+                            {activeTab === 'whatsapp' ? 'Kelola koneksi WhatsApp Gateway' : 'Pantau performa penagihan hari ini'}
+                        </p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-4">
-                   <div className="bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-slate-200 text-sm font-bold text-slate-600 flex items-center gap-3">
+                   <div className="hidden md:flex bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-slate-200/60 text-sm font-bold text-slate-600 items-center gap-3">
                       <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                       {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                    </div>
-                   <div className="w-12 h-12 bg-white rounded-full border-2 border-white shadow-md flex items-center justify-center overflow-hidden">
-                      <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-sm">
+                   <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full border-2 md:border-4 border-white shadow-lg shadow-indigo-100 flex items-center justify-center overflow-hidden ring-1 ring-slate-100">
+                      <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white text-xs md:text-sm">
                         AD
                       </div>
                    </div>
@@ -253,54 +291,64 @@ const Dashboard = () => {
             </header>
 
             {activeTab === 'dashboard' && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <StatCard 
-                      title="Total Nasabah" 
-                      value={totalCustomers} 
-                      icon={Users} 
-                      colorClass="indigo"
-                      gradient="from-indigo-500 to-blue-500"
-                    />
-                    <StatCard 
-                      title="Sudah Bayar" 
-                      value={doneCustomers} 
-                      icon={CheckCircle} 
-                      colorClass="emerald"
-                      gradient="from-emerald-500 to-teal-500" 
-                      subValue={`${collectionRate.toFixed(1)}%`}
-                      subLabel="Repayment Rate"
-                    />
-                    <StatCard 
-                      title="Belum Bayar" 
-                      value={pendingCustomers} 
-                      icon={XCircle} 
-                      colorClass="rose"
-                      gradient="from-rose-500 to-red-500" 
-                    />
-                    <StatCard 
-                      title="Jatuh Tempo Hari Ini" 
-                      value={dueToday.length} 
-                      icon={Activity} 
-                      colorClass="amber"
-                      gradient="from-amber-500 to-orange-500" 
-                      subValue="Prioritas"
-                      subLabel=""
-                    />
-                    <StatCard 
-                      title="NPL Ratio" 
-                      value={`${nplRatio.toFixed(2)}%`} 
-                      icon={AlertTriangle} 
-                      colorClass="rose"
-                      gradient="from-rose-600 to-red-600" 
-                      subValue={`Rp ${(nplOutstanding / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}Jt`}
-                      subLabel="Bad Debt"
-                    />
+              <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Stats Grid - Mobile Scroll / Desktop Grid */}
+                <div className="flex md:grid md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 overflow-x-auto md:overflow-visible pb-4 md:pb-0 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+                    <div className="min-w-[85%] md:min-w-0 snap-center">
+                        <StatCard 
+                          title="Total Nasabah" 
+                          value={totalCustomers} 
+                          icon={Users} 
+                          colorClass="indigo"
+                          gradient="from-indigo-500 to-blue-500"
+                        />
+                    </div>
+                    <div className="min-w-[85%] md:min-w-0 snap-center">
+                        <StatCard 
+                          title="Sudah Bayar" 
+                          value={doneCustomers} 
+                          icon={CheckCircle} 
+                          colorClass="emerald"
+                          gradient="from-emerald-500 to-teal-500" 
+                          subValue={`${collectionRate.toFixed(1)}%`}
+                          subLabel="Rate"
+                        />
+                    </div>
+                    <div className="min-w-[85%] md:min-w-0 snap-center">
+                        <StatCard 
+                          title="Belum Bayar" 
+                          value={pendingCustomers} 
+                          icon={XCircle} 
+                          colorClass="rose"
+                          gradient="from-rose-500 to-red-500" 
+                        />
+                    </div>
+                    <div className="min-w-[85%] md:min-w-0 snap-center">
+                        <StatCard 
+                          title="Jatuh Tempo" 
+                          value={dueToday.length} 
+                          icon={Activity} 
+                          colorClass="amber"
+                          gradient="from-amber-500 to-orange-500" 
+                          subValue="Hari Ini"
+                          subLabel=""
+                        />
+                    </div>
+                    <div className="min-w-[85%] md:min-w-0 snap-center">
+                        <StatCard 
+                          title="NPL Ratio" 
+                          value={`${nplRatio.toFixed(2)}%`} 
+                          icon={AlertTriangle} 
+                          colorClass="rose"
+                          gradient="from-rose-600 to-red-600" 
+                          subValue={`Rp ${(nplOutstanding / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}Jt`}
+                          subLabel="Bad Debt"
+                        />
+                    </div>
                 </div>
 
                 {/* Due Today Section */}
-                <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 p-8">
+                <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 p-4 md:p-8">
                   <CustomerTable 
                     customers={customers} 
                     onStatusUpdate={handleStatusUpdate}
@@ -318,25 +366,40 @@ const Dashboard = () => {
                     <CalendarView 
                        customers={customers} 
                        selectedDate={selectedDate} 
-                       onDateChange={setSelectedDate} 
-                     />
-                 </div>
-
-                 {/* List of customers due on selected date */}
-                 <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 p-8">
-                     <div className="mb-6">
-                         <h3 className="text-lg font-bold text-slate-800">Tagihan Jatuh Tempo: {new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</h3>
-                         <p className="text-sm text-slate-500">Daftar nasabah yang harus ditagih pada tanggal ini</p>
-                     </div>
-                     <CustomerTable 
-                       customers={customers.filter(c => isDue(c, selectedDate))} 
-                       onStatusUpdate={handleStatusUpdate}
-                       waReady={waReady}
-                       selectedDate={selectedDate}
-                       fetchCustomers={fetchCustomers}
+                       onDateChange={handleDateSelect} 
                      />
                  </div>
               </div>
+            )}
+
+            {/* Calendar Date Details Modal */}
+            {isDateModalOpen && activeTab === 'calendar' && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative">
+                        {/* Header */}
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white z-10 sticky top-0">
+                             <div>
+                                 <h3 className="text-xl font-bold text-slate-800">Tagihan: {new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</h3>
+                                 <p className="text-sm text-slate-500">Daftar nasabah yang harus ditagih</p>
+                             </div>
+                             <button onClick={() => setIsDateModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                <X size={24} className="text-slate-400 hover:text-slate-600" />
+                            </button>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-4 bg-[#F8FAFC]">
+                             <CustomerTable 
+                               customers={customers.filter(c => isDue(c, selectedDate))} 
+                               onStatusUpdate={handleStatusUpdate}
+                               waReady={waReady}
+                               selectedDate={selectedDate}
+                               fetchCustomers={fetchCustomers}
+                               isCompact={true}
+                             />
+                        </div>
+                    </div>
+                </div>
             )}
 
             {activeTab === 'whatsapp' && (

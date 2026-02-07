@@ -34,29 +34,29 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[100px]" />
-          <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-indigo-200/40 rounded-full blur-[100px]" />
+          <div className="absolute top-[-10%] right-[-5%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-200/40 rounded-full blur-[80px] md:blur-[100px]" />
+          <div className="absolute bottom-[-10%] left-[-5%] w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-indigo-200/40 rounded-full blur-[80px] md:blur-[100px]" />
       </div>
 
       <div className="absolute top-8 left-8 z-20">
         <button 
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium"
+          className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium p-2 md:p-0"
         >
-          <ChevronLeft size={20} /> Kembali
+          <ChevronLeft size={20} /> <span className="hidden md:inline">Kembali</span><span className="md:hidden">Home</span>
         </button>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-xl p-8 md:p-10 rounded-3xl shadow-2xl w-full max-w-md transform transition-all border border-white/50 relative z-10">
-        <div className="flex flex-col items-center mb-8">
+      <div className="bg-white/80 backdrop-blur-xl p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-md transform transition-all border border-white/50 relative z-10 mx-4">
+        <div className="flex flex-col items-center mb-6 md:mb-8">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/30 mb-4">
                 A
             </div>
-            <h2 className="text-2xl font-bold text-slate-800">Selamat Datang Kembali</h2>
-            <p className="text-slate-500 text-sm mt-2">Masuk untuk mengelola dashboard Anda</p>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-800">Selamat Datang</h2>
+            <p className="text-slate-500 text-sm mt-2 text-center">Masuk untuk mengelola dashboard</p>
         </div>
         
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Username</label>
             <div className="relative group">
@@ -65,7 +65,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 font-medium"
+                className="w-full pl-10 pr-4 py-3.5 md:py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 font-medium text-base"
                 placeholder="Masukkan username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -81,7 +81,7 @@ const Login = () => {
               </div>
               <input
                 type="password"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 font-medium"
+                className="w-full pl-10 pr-4 py-3.5 md:py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 font-medium text-base"
                 placeholder="Masukkan password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
