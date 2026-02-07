@@ -61,7 +61,7 @@ const LandingPage = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-            Sistem Penagihan Otomatis v2.0
+            ADNT - Automated Due Notification Tools
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white mb-6 md:mb-8 leading-[1.1]">
