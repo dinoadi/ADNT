@@ -116,12 +116,19 @@ const Dashboard = () => {
   const doneCustomers = customers.filter(c => ['DONE', 'POTONG MANUAL'].includes(c.payment_status)).length;
   const pendingCustomers = customers.filter(c => c.payment_status === 'BELUM BAYAR').length;
   
-  // Collection Rate (Amount Based)
-  const totalTarget = customers.reduce((sum, c) => sum + (Number(c.tagihan_pokok) || 0) + (Number(c.tagihan_bunga) || 0), 0);
-  const totalCollected = customers
-    .filter(c => ['DONE', 'POTONG MANUAL'].includes(c.payment_status))
-    .reduce((sum, c) => sum + (Number(c.tagihan_pokok) || 0) + (Number(c.tagihan_bunga) || 0), 0);
-  const collectionRate = totalTarget > 0 ? (totalCollected / totalTarget) * 100 : 0;
+  // Repayment Rate Logic (Kolektabilitas 1 / Total Outstanding)
+  // Termasuk yang belum jatuh tempo (tanggal 11-31) jika masih dianggap Kol 1
+  const kol1Outstanding = customers
+    .filter(c => {
+      const strKolek = String(c.kolek || '');
+      const match = strKolek.match(/\d+/);
+      const k = match ? parseInt(match[0]) : 1; // Default to 1 (Lancar)
+      return k === 1;
+    })
+    .reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+
+  const totalOutstanding = customers.reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+  const repaymentRate = totalOutstanding > 0 ? (kol1Outstanding / totalOutstanding) * 100 : 0;
 
   const today = fmt(new Date());
   const isDue = (c: any, dateStr: string) => {
@@ -132,14 +139,12 @@ const Dashboard = () => {
     return d.getDate() === baseDay;
   };
   const dueToday = customers.filter(c => isDue(c, today));
-
-  const totalOutstanding = customers.reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
   
   // Robust NPL Calculation
   const nplOutstanding = customers
       .filter(c => {
         // Parse string like "3 - Kurang Lancar" or "Kolek 5"
-        const strKolek = String(c.kolek);
+        const strKolek = String(c.kolek || '');
         const match = strKolek.match(/\d+/);
         const k = match ? parseInt(match[0]) : 1;
         return k > 2; // Kolek 3, 4, 5
@@ -310,8 +315,8 @@ const Dashboard = () => {
                           icon={CheckCircle} 
                           colorClass="emerald"
                           gradient="from-emerald-500 to-teal-500" 
-                          subValue={`${collectionRate.toFixed(1)}%`}
-                          subLabel="Rate"
+                          subValue={`${repaymentRate.toFixed(1)}%`}
+                          subLabel="Repayment Rate"
                         />
                     </div>
                     <div className="min-w-[85%] md:min-w-0 snap-center">

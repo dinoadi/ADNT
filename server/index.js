@@ -136,9 +136,9 @@ app.post('/api/customers/:no_rek/payment', async (req, res) => {
     const effectiveBill = customer.tagihan_pokok || 0;
 
     if (isPaying && !wasPaid) {
-      newSaldo = customer.saldo_awal - effectiveBill;
+      newSaldo = customer.saldo_akhir - effectiveBill;
     } else if (!isPaying && wasPaid) {
-      newSaldo = customer.saldo_awal; // Restore to initial
+      newSaldo = customer.saldo_akhir + effectiveBill;
     }
 
     customer.payment_status = status;
