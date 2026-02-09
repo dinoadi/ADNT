@@ -469,15 +469,15 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                                         <select
                                             className={`text-[10px] font-bold rounded px-1.5 py-0.5 border-none focus:ring-1 cursor-pointer ${
                                                 c.payment_status === 'DONE' ? 'bg-emerald-100 text-emerald-700' : 
-                                                c.payment_status === 'JANJI BAYAR' ? 'bg-amber-100 text-amber-700' :
+                                                c.payment_status === 'POTONG MANUAL' ? 'bg-amber-100 text-amber-700' :
                                                 'bg-rose-100 text-rose-700'
                                             }`}
                                             value={c.payment_status}
                                             onChange={(e) => handleStatusChange(c, e.target.value)}
                                         >
-                                            <option value="BELUM BAYAR">BELUM</option>
-                                            <option value="JANJI BAYAR">JANJI</option>
-                                            <option value="DONE">LUNAS</option>
+                                            <option value="BELUM BAYAR">BELUM BAYAR</option>
+                                            <option value="DONE">SUDAH BAYAR</option>
+                                            <option value="POTONG MANUAL">POTONG MANUAL</option>
                                         </select>
                                     </div>
                                 </div>
