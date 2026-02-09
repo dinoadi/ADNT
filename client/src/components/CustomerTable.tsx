@@ -13,6 +13,7 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [kolekFilter, setKolekFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('default');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkKolek, setBulkKolek] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,6 +47,17 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
     const matchesStatus = statusFilter === 'ALL' || c.payment_status === statusFilter;
     const matchesKolek = kolekFilter === 'ALL' || String(c.kolek || 1) === kolekFilter;
     return matchesSearch && matchesStatus && matchesKolek;
+  }).sort((a: any, b: any) => {
+    if (sortBy === 'date_day') {
+        const getDay = (dateStr: string) => {
+           if (!dateStr) return 99;
+           const parts = dateStr.split('-');
+           if (parts.length === 3) return parseInt(parts[2]);
+           return new Date(dateStr).getDate();
+        };
+        return getDay(a.tanggal_jt) - getDay(b.tanggal_jt);
+    }
+    return 0;
   });
 
   // Bulk Selection Handlers
@@ -443,8 +455,8 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                                     <span className="font-mono text-xs font-bold text-slate-700 whitespace-nowrap">Rp {amount}</span>
                                 </div>
                                 <div className="flex justify-between items-center mt-0.5">
-                                    <span className="text-[10px] text-slate-400 font-mono truncate">{c.no_rek}</span>
-                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] text-slate-400 font-mono truncate">{c.no_cif}</span>
+                                        <div className="flex items-center gap-1.5">
                                         {waReady && (
                                             <button 
                                                 onClick={() => sendWhatsApp(c)}
@@ -532,6 +544,18 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                     <option value="3">Kolek 3 - Kurang Lancar</option>
                     <option value="4">Kolek 4 - Diragukan</option>
                     <option value="5">Kolek 5 - Macet</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-60 text-slate-500" />
+            </div>
+
+            <div className="relative flex-1 md:w-48 group">
+                <select 
+                    className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 font-medium appearance-none cursor-pointer"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                >
+                    <option value="default">Urutan Default</option>
+                    <option value="date_day">Tgl Jatuh Tempo (1-31)</option>
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-60 text-slate-500" />
             </div>
