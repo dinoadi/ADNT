@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, Save
 } from 'lucide-react';
 import { read, utils } from 'xlsx';
+import { supabase } from '../supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3001');
 
@@ -19,6 +20,7 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -234,10 +236,34 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsUploading(true);
+
+    // 1. Upload to Supabase Storage (Optional but recommended for audit/history)
+    try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${new Date().getTime()}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
+
+        // Upload to 'excel-uploads' bucket (ensure this bucket exists in Supabase)
+        const { error: uploadError } = await supabase.storage
+            .from('excel-uploads')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            console.error('Supabase upload error:', uploadError);
+            // Don't block processing if upload fails, just log it
+        } else {
+            console.log('File uploaded to Supabase Storage:', filePath);
+        }
+    } catch (error) {
+        console.error('Unexpected error during Supabase upload:', error);
+    }
+
+    // 2. Process locally for preview
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
@@ -378,9 +404,11 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
 
         setImportPreview(mappedData);
         setIsPreviewOpen(true);
+        setIsUploading(false);
       } catch (error) {
         console.error('Import failed:', error);
         alert('Gagal membaca file Excel.');
+        setIsUploading(false);
       }
     };
     reader.readAsBinaryString(file);
@@ -588,10 +616,12 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                 />
                 <button 
                     onClick={handleImportClick}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                    disabled={isUploading}
+                    className={`flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title="Import Excel"
                 >
-                    <Upload size={16} /> Import
+                    {isUploading ? <RefreshCw className="animate-spin" size={16} /> : <Upload size={16} />}
+                    {isUploading ? 'Uploading...' : 'Import'}
                 </button>
                 <button 
                     onClick={downloadTemplate}

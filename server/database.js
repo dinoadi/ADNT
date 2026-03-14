@@ -1,12 +1,27 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
 
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite',
-  logging: false
-});
+// Use Supabase/PostgreSQL if DATABASE_URL is provided, else fallback to SQLite
+const isPostgres = !!process.env.DATABASE_URL;
+
+const sequelize = isPostgres 
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false // Required for some hosted DBs like Supabase/Render
+        }
+      },
+      logging: false
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: './database.sqlite',
+      logging: false
+    });
 
 const Customer = sequelize.define('Customer', {
   no_rek: {
