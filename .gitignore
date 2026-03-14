@@ -5,3 +5,11 @@ server/.wwebjs_auth/
 server/database.sqlite
 server/*.sqlite
 server/*.sqlite-journal
+.env
+client/.env
+server/.env
+*.env
+server/.wwebjs_cache/
+server/.wwebjs_auth/
+client/dist/
+server/dist/
