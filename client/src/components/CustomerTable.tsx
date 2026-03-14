@@ -243,24 +243,28 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
     setIsUploading(true);
 
     // 1. Upload to Supabase Storage (Optional but recommended for audit/history)
-    try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${new Date().getTime()}.${fileExt}`;
-        const filePath = `uploads/${fileName}`;
+    if (supabase) {
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2, 15)}_${new Date().getTime()}.${fileExt}`;
+            const filePath = `uploads/${fileName}`;
 
-        // Upload to 'excel-uploads' bucket (ensure this bucket exists in Supabase)
-        const { error: uploadError } = await supabase.storage
-            .from('excel-uploads')
-            .upload(filePath, file);
+            // Upload to 'excel-uploads' bucket (ensure this bucket exists in Supabase)
+            const { error: uploadError } = await supabase.storage
+                .from('excel-uploads')
+                .upload(filePath, file);
 
-        if (uploadError) {
-            console.error('Supabase upload error:', uploadError);
-            // Don't block processing if upload fails, just log it
-        } else {
-            console.log('File uploaded to Supabase Storage:', filePath);
+            if (uploadError) {
+                console.error('Supabase upload error:', uploadError);
+                // Don't block processing if upload fails, just log it
+            } else {
+                console.log('File uploaded to Supabase Storage:', filePath);
+            }
+        } catch (error) {
+            console.error('Unexpected error during Supabase upload:', error);
         }
-    } catch (error) {
-        console.error('Unexpected error during Supabase upload:', error);
+    } else {
+        console.warn('Supabase not configured, skipping backup upload.');
     }
 
     // 2. Process locally for preview
