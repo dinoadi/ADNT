@@ -113,13 +113,14 @@ const Dashboard = () => {
   const totalCustomers = (customers || []).length;
   
   // Payment Status Counts
-  const doneCustomers = (customers || []).filter(c => ['DONE', 'POTONG MANUAL'].includes(c?.payment_status)).length;
-  const pendingCustomers = (customers || []).filter(c => c?.payment_status === 'BELUM BAYAR').length;
+  const doneCustomers = (customers || []).filter(c => c && ['DONE', 'POTONG MANUAL'].includes(c.payment_status)).length;
+  const pendingCustomers = (customers || []).filter(c => c && c.payment_status === 'BELUM BAYAR').length;
   
   // Repayment Rate Logic (Kolektabilitas 1 / Total Outstanding)
   const kol1Outstanding = (customers || [])
     .filter(c => {
-      const strKolek = String(c?.kolek || '');
+      if (!c) return false;
+      const strKolek = String(c.kolek || '');
       const match = strKolek.match(/\d+/);
       const k = match ? parseInt(match[0]) : 1; 
       return k === 1;
@@ -131,7 +132,7 @@ const Dashboard = () => {
 
   const today = fmt(new Date());
   const isDue = (c: any, dateStr: string) => {
-    if (!c?.tanggal_jt) return false;
+    if (!c || !c.tanggal_jt) return false;
     const baseDay = parseInt(c.tanggal_jt.slice(-2), 10);
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return false;
@@ -142,7 +143,8 @@ const Dashboard = () => {
   // Robust NPL Calculation
   const nplOutstanding = (customers || [])
       .filter(c => {
-        const strKolek = String(c?.kolek || '');
+        if (!c) return false;
+        const strKolek = String(c.kolek || '');
         const match = strKolek.match(/\d+/);
         const k = match ? parseInt(match[0]) : 1;
         return k > 2; // Kolek 3, 4, 5
