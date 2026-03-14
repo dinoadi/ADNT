@@ -117,39 +117,37 @@ const Dashboard = () => {
   const pendingCustomers = customers.filter(c => c.payment_status === 'BELUM BAYAR').length;
   
   // Repayment Rate Logic (Kolektabilitas 1 / Total Outstanding)
-  // Termasuk yang belum jatuh tempo (tanggal 11-31) jika masih dianggap Kol 1
-  const kol1Outstanding = customers
+  const kol1Outstanding = (customers || [])
     .filter(c => {
-      const strKolek = String(c.kolek || '');
+      const strKolek = String(c?.kolek || '');
       const match = strKolek.match(/\d+/);
-      const k = match ? parseInt(match[0]) : 1; // Default to 1 (Lancar)
+      const k = match ? parseInt(match[0]) : 1; 
       return k === 1;
     })
-    .reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+    .reduce((sum, c) => sum + (Number(c?.saldo_akhir) || 0), 0);
 
-  const totalOutstanding = customers.reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+  const totalOutstanding = (customers || []).reduce((sum, c) => sum + (Number(c?.saldo_akhir) || 0), 0);
   const repaymentRate = totalOutstanding > 0 ? (kol1Outstanding / totalOutstanding) * 100 : 0;
 
   const today = fmt(new Date());
   const isDue = (c: any, dateStr: string) => {
-    if (!c.tanggal_jt) return false;
+    if (!c?.tanggal_jt) return false;
     const baseDay = parseInt(c.tanggal_jt.slice(-2), 10);
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return false;
     return d.getDate() === baseDay;
   };
-  const dueToday = customers.filter(c => isDue(c, today));
+  const dueToday = (customers || []).filter(c => isDue(c, today));
   
   // Robust NPL Calculation
-  const nplOutstanding = customers
+  const nplOutstanding = (customers || [])
       .filter(c => {
-        // Parse string like "3 - Kurang Lancar" or "Kolek 5"
-        const strKolek = String(c.kolek || '');
+        const strKolek = String(c?.kolek || '');
         const match = strKolek.match(/\d+/);
         const k = match ? parseInt(match[0]) : 1;
         return k > 2; // Kolek 3, 4, 5
       })
-      .reduce((sum, c) => sum + (Number(c.saldo_akhir) || 0), 0);
+      .reduce((sum, c) => sum + (Number(c?.saldo_akhir) || 0), 0);
       
   const nplRatio = totalOutstanding > 0 ? (nplOutstanding / totalOutstanding) * 100 : 0;
 
