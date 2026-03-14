@@ -26,8 +26,8 @@ const CalendarView = ({ customers, onDateChange, selectedDate }: any) => {
 
   const getDueCount = (date: Date) => {
     if (!date) return 0;
-    return customers.filter((c: any) => {
-      if (!c.tanggal_jt) return false;
+    return (customers || []).filter((c: any) => {
+      if (!c?.tanggal_jt) return false;
       const baseDay = parseInt(c.tanggal_jt.slice(-2), 10);
       return date.getDate() === baseDay;
     }).length;

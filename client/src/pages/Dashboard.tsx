@@ -110,11 +110,11 @@ const Dashboard = () => {
   };
 
   // Stats Logic
-  const totalCustomers = customers.length;
+  const totalCustomers = (customers || []).length;
   
   // Payment Status Counts
-  const doneCustomers = customers.filter(c => ['DONE', 'POTONG MANUAL'].includes(c.payment_status)).length;
-  const pendingCustomers = customers.filter(c => c.payment_status === 'BELUM BAYAR').length;
+  const doneCustomers = (customers || []).filter(c => ['DONE', 'POTONG MANUAL'].includes(c?.payment_status)).length;
+  const pendingCustomers = (customers || []).filter(c => c?.payment_status === 'BELUM BAYAR').length;
   
   // Repayment Rate Logic (Kolektabilitas 1 / Total Outstanding)
   const kol1Outstanding = (customers || [])

@@ -43,11 +43,11 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const filteredCustomers = customers.filter((c: any) => {
-    const matchesSearch = c.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          c.no_rek.includes(searchTerm);
-    const matchesStatus = statusFilter === 'ALL' || c.payment_status === statusFilter;
-    const matchesKolek = kolekFilter === 'ALL' || String(c.kolek || 1) === kolekFilter;
+  const filteredCustomers = (customers || []).filter((c: any) => {
+    const matchesSearch = (c?.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (c?.no_rek || '').includes(searchTerm);
+    const matchesStatus = statusFilter === 'ALL' || c?.payment_status === statusFilter;
+    const matchesKolek = kolekFilter === 'ALL' || String(c?.kolek || 1) === kolekFilter;
     return matchesSearch && matchesStatus && matchesKolek;
   }).sort((a: any, b: any) => {
     if (sortBy === 'date_day') {
