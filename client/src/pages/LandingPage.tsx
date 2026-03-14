@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Shield, Zap, BarChart3, Lock, Users, ArrowRight, 
-  Smartphone, Bell, Check, TrendingUp, Globe, Cpu 
+  Bell, Check, TrendingUp, Globe, Cpu 
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -70,7 +70,7 @@ const LandingPage = () => {
           </h1>
           
           <p className="text-base md:text-xl text-slate-400 mb-8 md:mb-12 max-w-2xl mx-auto leading-relaxed font-light px-4">
-            Tinggalkan cara manual yang lambat. ADNT menghadirkan ekosistem penagihan cerdas yang terintegrasi langsung dengan WhatsApp Gateway untuk akselerasi arus kas bisnis Anda.
+            Tinggalkan cara manual yang lambat. ADNT menghadirkan ekosistem manajemen penagihan cerdas untuk akselerasi arus kas bisnis Anda.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-5 justify-center items-center px-4">
@@ -95,17 +95,17 @@ const LandingPage = () => {
               <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <Smartphone className="text-green-400" size={20} />
+                    <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                      <BarChart3 className="text-indigo-400" size={20} />
                     </div>
                     <div>
-                      <div className="text-white font-bold">WhatsApp Gateway</div>
-                      <div className="text-green-400 text-xs flex items-center gap-1">
+                      <div className="text-white font-bold">Data Analytics</div>
+                      <div className="text-indigo-400 text-xs flex items-center gap-1">
                         <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                         </span>
-                        Connected
+                        Active
                       </div>
                     </div>
                   </div>
@@ -115,12 +115,12 @@ const LandingPage = () => {
                 <div className="space-y-3">
                    <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl border border-slate-800">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                          <Bell size={16} className="text-indigo-400" />
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                          <TrendingUp size={16} className="text-emerald-400" />
                         </div>
                         <div className="text-sm">
-                          <div className="text-slate-200 font-medium">Tagihan Terkirim</div>
-                          <div className="text-slate-500 text-xs">Baru saja</div>
+                          <div className="text-slate-200 font-medium">Repayment Rate</div>
+                          <div className="text-slate-500 text-xs">Meningkat</div>
                         </div>
                       </div>
                       <Check size={16} className="text-green-500" />

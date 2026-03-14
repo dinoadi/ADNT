@@ -1,8 +1,6 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode');
 const cors = require('cors');
 const path = require('path');
 const { sequelize, Customer, initDb } = require('./database');
@@ -22,81 +20,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// WhatsApp Client
-const waClient = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    headless: true,
-    args: ['--no-sandbox']
-  }
-});
-
-let qrCodeData = null;
-let isWaReady = false;
-
-waClient.on('qr', (qr) => {
-  qrCodeData = qr;
-  isWaReady = false;
-  io.emit('wa_qr', qr);
-  console.log('QR Code received');
-});
-
-waClient.on('ready', () => {
-  isWaReady = true;
-  qrCodeData = null;
-  io.emit('wa_ready', true);
-  console.log('WhatsApp Client is ready!');
-});
-
-waClient.on('authenticated', () => {
-    console.log('WhatsApp Authenticated');
-});
-
-waClient.on('disconnected', async (reason) => {
-    console.log('WhatsApp was disconnected', reason);
-    isWaReady = false;
-    qrCodeData = null;
-    io.emit('wa_ready', false); // Notify client
-    
-    // Destroy and re-initialize to allow new login
-    try {
-        await waClient.destroy();
-    } catch (error) {
-        console.error('Error destroying client:', error);
-    }
-    waClient.initialize();
-});
-
-waClient.initialize();
-
 // API Endpoints
-
-// Logout/Disconnect WhatsApp
-app.post('/api/wa/logout', async (req, res) => {
-    try {
-        if (isWaReady) {
-            await waClient.logout();
-        } else {
-             // If not ready (e.g. stuck or just QR visible), just reset
-             await waClient.destroy();
-             waClient.initialize();
-        }
-        isWaReady = false;
-        qrCodeData = null;
-        res.json({ success: true });
-    } catch (error) {
-        // If logout fails (e.g. already disconnected), force reset
-        try {
-            await waClient.destroy();
-            waClient.initialize();
-            isWaReady = false;
-            qrCodeData = null;
-            res.json({ success: true });
-        } catch (e) {
-            res.status(500).json({ error: e.message });
-        }
-    }
-});
 
 
 // Login (Simple Mock)
@@ -265,29 +189,6 @@ app.post('/api/customers/bulk-kolek', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-});
-
-// Get WA Status
-app.get('/api/wa/status', (req, res) => {
-  res.json({ ready: isWaReady, qr: qrCodeData });
-});
-
-// Send WA Message
-app.post('/api/wa/send', async (req, res) => {
-  const { number, message } = req.body;
-  if (!isWaReady) return res.status(400).json({ error: 'WhatsApp not ready' });
-
-  try {
-    // Format number: remove 0 or +, add 62, append @c.us
-    let chatId = number.replace(/[^0-9]/g, '');
-    if (chatId.startsWith('0')) chatId = '62' + chatId.slice(1);
-    if (!chatId.endsWith('@c.us')) chatId += '@c.us';
-
-    await waClient.sendMessage(chatId, message);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 // Catch-all route for SPA

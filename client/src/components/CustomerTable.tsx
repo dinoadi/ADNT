@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { 
-  MessageCircle, Phone, Search, Filter, Check, X, 
+  Phone, Search, Filter, Check, X, 
   AlertCircle, Edit2, Plus, Upload, Download, Trash2, 
   ChevronDown, ChevronUp, Save, RefreshCw
 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { supabase } from '../supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3001');
 
-const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetchCustomers, isCompact = false }: any) => {
+const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers, isCompact = false }: any) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [kolekFilter, setKolekFilter] = useState('ALL');
@@ -138,29 +138,6 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
       return amt;
     }
     return c.tagihan_pokok || 0;
-  };
-
-  const sendWhatsApp = async (customer: any) => {
-    if (!waReady) {
-      alert('WhatsApp belum terkoneksi! Scan QR Code terlebih dahulu.');
-      return;
-    }
-    const bill = computeAmount(customer, selectedDate).toLocaleString();
-    const message = `Yth. Bpk/Ibu ${customer.nama}, Tagihan Anda sebesar Rp ${bill} jatuh tempo pada ${customer.tanggal_jt}. Mohon segera melakukan pembayaran. Terima kasih.`;
-    
-    try {
-      let number = customer.no_hp.replace(/\D/g, '');
-      if (number.startsWith('0')) number = '62' + number.substring(1);
-      
-      await axios.post(`${API_URL}/api/wa/send`, {
-        number: number,
-        message: message
-      });
-      alert(`Pesan terkirim ke ${customer.nama}`);
-    } catch (error) {
-      console.error('Failed to send WA:', error);
-      alert('Gagal mengirim pesan WhatsApp');
-    }
   };
 
   const handleStatusChange = (customer: any, newStatus: string) => {
@@ -730,12 +707,6 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                         </div>
                         
                         <button 
-                            onClick={() => sendWhatsApp(c)}
-                            className="p-3 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
-                        >
-                            <MessageCircle size={18} />
-                        </button>
-                        <button 
                             onClick={() => openEditModal(c)}
                             className="p-3 bg-indigo-100 text-indigo-600 rounded-xl hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
                         >
@@ -804,13 +775,6 @@ const CustomerTable = ({ customers, onStatusUpdate, waReady, selectedDate, fetch
                         </div>
                         
                         <div className="flex gap-2">
-                            <button 
-                                onClick={() => sendWhatsApp(c)}
-                                className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm hover:shadow-emerald-500/30"
-                                title="Kirim WhatsApp"
-                            >
-                                <MessageCircle size={18} />
-                            </button>
                             <button 
                                 onClick={() => openEditModal(c)}
                                 className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-500 hover:text-white transition-all shadow-sm hover:shadow-indigo-500/30"

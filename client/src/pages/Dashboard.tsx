@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
-import { QRCodeSVG } from 'qrcode.react';
 import CustomerTable from '../components/CustomerTable';
 import CalendarView from '../components/CalendarView';
 import { 
-  Users, CheckCircle, XCircle, Activity, Smartphone, LogOut, 
+  Users, CheckCircle, XCircle, Activity, LogOut, 
   Calendar, LayoutDashboard, QrCode, RefreshCw, ChevronRight,
   CreditCard, Wallet, ArrowUpRight, ArrowDownRight, AlertTriangle, Menu, X
 } from 'lucide-react';
@@ -16,12 +15,8 @@ const socket = io(API_URL);
 
 const Dashboard = () => {
   const [customers, setCustomers] = useState<any[]>([]);
-  const [waReady, setWaReady] = useState(false);
-  const [qrCode, setQrCode] = useState('');
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'calendar' | 'whatsapp'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'calendar'
   const navigate = useNavigate();
-  const [loadingQr, setLoadingQr] = useState(false);
-  const [showQrScanner, setShowQrScanner] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
@@ -44,31 +39,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchCustomers();
-    
-    socket.on('wa_qr', (qr) => {
-      setLoadingQr(true);
-      // Artificial delay for smoother transition
-      setTimeout(() => {
-        setQrCode(qr);
-        setWaReady(false);
-        setLoadingQr(false);
-      }, 800);
-    });
-
-    socket.on('wa_ready', () => {
-      setWaReady(true);
-      setQrCode('');
-    });
-
-    axios.get(`${API_URL}/api/wa/status`).then(res => {
-      if (res.data.ready) setWaReady(true);
-      else if (res.data.qr) setQrCode(res.data.qr);
-    });
-
-    return () => {
-      socket.off('wa_qr');
-      socket.off('wa_ready');
-    };
   }, []);
 
   const handleStatusUpdate = async (no_rek: string, newStatus: string) => {
@@ -90,24 +60,6 @@ const Dashboard = () => {
     localStorage.removeItem('token');
     navigate('/');
   }
-
-  const handleDisconnect = async () => {
-    if (window.confirm('Apakah Anda yakin ingin memutuskan koneksi WhatsApp?')) {
-       try {
-           await axios.post(`${API_URL}/api/wa/logout`);
-           setWaReady(false);
-           setQrCode('');
-           setShowQrScanner(false);
-           alert('Koneksi WhatsApp diputus. Silakan scan ulang jika ingin menghubungkan kembali.');
-       } catch (error) {
-           console.error('Logout failed', error);
-           // Force client side reset even if server fails
-           setWaReady(false);
-           setQrCode('');
-           setShowQrScanner(false);
-       }
-    }
-  };
 
   // Stats Logic
   const totalCustomers = (customers || []).length;
@@ -239,15 +191,6 @@ const Dashboard = () => {
                         <span className="font-medium relative z-10">Kalender</span>
                         {activeTab === 'calendar' && <ChevronRight size={16} className="ml-auto opacity-80" />}
                     </button>
-                    <button 
-                        onClick={() => { setActiveTab('whatsapp'); setIsMobileMenuOpen(false); }}
-                        className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${activeTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'hover:bg-white/5 hover:text-white'}`}
-                    >
-                        {activeTab === 'whatsapp' && <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>}
-                        <Smartphone size={20} className={activeTab === 'whatsapp' ? 'text-white' : 'text-slate-400 group-hover:text-white transition-colors'} /> 
-                        <span className="font-medium relative z-10">WhatsApp Connect</span>
-                        <div className={`ml-auto w-2.5 h-2.5 rounded-full ring-2 ring-[#0F172A] ${waReady ? 'bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse' : 'bg-rose-500'}`}></div>
-                    </button>
                 </nav>
             </div>
 
@@ -275,10 +218,10 @@ const Dashboard = () => {
                     </button>
                     <div>
                         <h2 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">
-                            {activeTab === 'dashboard' ? 'Overview' : activeTab === 'calendar' ? 'Kalender' : 'WhatsApp'}
+                            {activeTab === 'dashboard' ? 'Overview' : 'Kalender'}
                         </h2>
                         <p className="text-slate-500 font-medium text-xs md:text-base hidden md:block">
-                            {activeTab === 'whatsapp' ? 'Kelola koneksi WhatsApp Gateway' : 'Pantau performa penagihan hari ini'}
+                            Pantau performa penagihan hari ini
                         </p>
                     </div>
                 </div>
@@ -357,7 +300,6 @@ const Dashboard = () => {
                   <CustomerTable 
                     customers={customers} 
                     onStatusUpdate={handleStatusUpdate}
-                    waReady={waReady}
                     selectedDate={selectedDate}
                     fetchCustomers={fetchCustomers}
                   />
@@ -397,7 +339,6 @@ const Dashboard = () => {
                              <CustomerTable 
                                customers={customers.filter(c => isDue(c, selectedDate))} 
                                onStatusUpdate={handleStatusUpdate}
-                               waReady={waReady}
                                selectedDate={selectedDate}
                                fetchCustomers={fetchCustomers}
                                isCompact={true}
@@ -405,130 +346,6 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {activeTab === 'whatsapp' && (
-              <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
-                  <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-4 rounded-2xl ${waReady ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
-                        <Smartphone size={32} />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-800">Status Koneksi WhatsApp</h3>
-                        <p className={`text-sm font-medium mt-1 ${waReady ? 'text-emerald-600' : 'text-slate-500'}`}>
-                          {waReady ? 'Terhubung & Siap Mengirim Pesan' : 'Belum Terhubung / Terputus'}
-                        </p>
-                      </div>
-                      <div className="ml-auto">
-                        <span className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${waReady ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                          <div className={`w-2 h-2 rounded-full ${waReady ? 'bg-emerald-600' : 'bg-rose-600'}`}></div>
-                          {waReady ? 'CONNECTED' : 'DISCONNECTED'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-12 flex flex-col items-center justify-center min-h-[400px]">
-                    {!waReady ? (
-                      !showQrScanner ? (
-                         <div className="text-center space-y-6 max-w-md">
-                            <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-100 rotate-3">
-                               <QrCode size={48} />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-800">Hubungkan WhatsApp</h3>
-                            <p className="text-slate-500">
-                               Klik tombol di bawah untuk memunculkan QR Code dan mulai menghubungkan perangkat Anda.
-                            </p>
-                            <button 
-                               onClick={() => setShowQrScanner(true)}
-                               className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/30 transition-all transform hover:-translate-y-1"
-                            >
-                               Tampilkan QR Code
-                            </button>
-                         </div>
-                      ) : (
-                        <div className="flex flex-col md:flex-row items-center gap-12 w-full animate-in fade-in zoom-in duration-300">
-                            <div className="flex-1 space-y-8">
-                            <div className="flex items-center gap-4 mb-2">
-                                <button onClick={() => setShowQrScanner(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                    <ChevronRight className="rotate-180" size={24} />
-                                </button>
-                                <h4 className="text-2xl font-bold text-slate-800">Scan QR Code</h4>
-                            </div>
-                            <ol className="space-y-6 text-slate-600">
-                                <li className="flex items-start gap-4">
-                                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm border border-indigo-100">1</span>
-                                <div className="pt-1">
-                                    <span className="font-bold text-slate-800 block mb-1">Buka WhatsApp</span>
-                                    Buka aplikasi WhatsApp di HP Anda
-                                </div>
-                                </li>
-                                <li className="flex items-start gap-4">
-                                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm border border-indigo-100">2</span>
-                                <div className="pt-1">
-                                    <span className="font-bold text-slate-800 block mb-1">Buka Menu Perangkat</span>
-                                    Ketuk Menu (Android) atau Settings (iPhone)
-                                </div>
-                                </li>
-                                <li className="flex items-start gap-4">
-                                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm border border-indigo-100">3</span>
-                                <div className="pt-1">
-                                    <span className="font-bold text-slate-800 block mb-1">Tautkan Perangkat</span>
-                                    Pilih "Linked Devices" lalu "Link a Device"
-                                </div>
-                                </li>
-                            </ol>
-                            </div>
-                            <div className="flex-shrink-0 relative">
-                            <div className="p-6 bg-white rounded-3xl border-2 border-dashed border-indigo-200 shadow-xl shadow-indigo-50 relative">
-                                {qrCode ? (
-                                    <QRCodeSVG value={qrCode} size={260} level="H" />
-                                ) : (
-                                    <div className="w-[260px] h-[260px] bg-slate-50 flex flex-col items-center justify-center text-slate-400 gap-4 rounded-xl">
-                                    <RefreshCw className="animate-spin text-indigo-400" size={40} />
-                                    <span className="text-sm font-medium">Menunggu Server...</span>
-                                    </div>
-                                )}
-                                
-                                {/* Loading Overlay when refreshing QR */}
-                                {loadingQr && (
-                                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center rounded-xl z-10 transition-all">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <RefreshCw className="animate-spin text-indigo-600" size={32} />
-                                        <span className="text-xs font-bold text-indigo-600">Memperbarui QR...</span>
-                                    </div>
-                                    </div>
-                                )}
-                            </div>
-                            <p className="text-center text-xs text-slate-400 mt-6 font-medium">QR Code diperbarui otomatis setiap beberapa detik</p>
-                            </div>
-                        </div>
-                      )
-                    ) : (
-                      <div className="text-center space-y-8 animate-in zoom-in duration-500">
-                        <div className="w-32 h-32 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-[0_0_0_12px_rgba(16,185,129,0.1)]">
-                          <CheckCircle size={64} />
-                        </div>
-                        <div>
-                            <h3 className="text-3xl font-extrabold text-slate-800 mb-2">WhatsApp Terhubung!</h3>
-                            <p className="text-slate-500 max-w-md mx-auto text-lg">
-                            Sistem siap mengirim pesan tagihan otomatis ke nasabah.
-                            </p>
-                        </div>
-                        <button 
-                          onClick={handleDisconnect}
-                          className="px-8 py-4 bg-white border-2 border-rose-100 text-rose-600 font-bold rounded-2xl hover:bg-rose-50 hover:border-rose-200 hover:shadow-lg hover:shadow-rose-500/10 transition-all transform hover:-translate-y-1 flex items-center gap-2 mx-auto"
-                        >
-                          <LogOut size={20} />
-                          Putuskan Koneksi
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             )}
         </main>
     </div>
