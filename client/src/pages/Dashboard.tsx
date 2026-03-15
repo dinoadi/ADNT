@@ -71,7 +71,7 @@ const Dashboard = () => {
     const pending = list.filter(c => c && c.payment_status === 'BELUM BAYAR').length;
     
     const kol1 = list.filter(c => {
-      const k = parseInt(String(c?.kolek || '').match(/\d+/)?.[0] || '1');
+      const k = parseInt(String(c?.kolek || '1').match(/\d+/)?.[0] || '1');
       return k === 1;
     }).reduce((sum, c) => sum + (Number(c?.saldo_akhir) || 0), 0);
 
@@ -79,7 +79,7 @@ const Dashboard = () => {
     const repaymentRate = totalOut > 0 ? (kol1 / totalOut) * 100 : 0;
 
     const npl = list.filter(c => {
-      const k = parseInt(String(c?.kolek || '').match(/\d+/)?.[0] || '1');
+      const k = parseInt(String(c?.kolek || '1').match(/\d+/)?.[0] || '1');
       return k > 2;
     }).reduce((sum, c) => sum + (Number(c?.saldo_akhir) || 0), 0);
     const nplRatio = totalOut > 0 ? (npl / totalOut) * 100 : 0;
@@ -93,7 +93,7 @@ const Dashboard = () => {
     // Group by Kolektibilitas
     const kolekGroups = [1, 2, 3, 4, 5].map(k => ({
       name: `KOL ${k}`,
-      value: list.filter(c => parseInt(String(c?.kolek || '').match(/\d+/)?.[0] || '1') === k).length
+      value: list.filter(c => parseInt(String(c?.kolek || '1').match(/\d+/)?.[0] || '1') === k).length
     }));
 
     // Dummy Trend Data (Since we don't have historical data in DB yet)

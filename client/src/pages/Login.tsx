@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, User, ArrowRight, ChevronLeft, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, User, ArrowRight, ChevronLeft, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
