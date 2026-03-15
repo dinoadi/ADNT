@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import io from 'socket.io-client';
 import CustomerTable from '../components/CustomerTable';
 import CalendarView from '../components/CalendarView';
 import { 
@@ -11,7 +10,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3001');
-const socket = io(API_URL);
 
 const Dashboard = () => {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -104,6 +102,8 @@ const Dashboard = () => {
       .reduce((sum, c) => sum + (Number(c?.saldo_akhir) || 0), 0);
       
   const nplRatio = totalOutstanding > 0 ? (nplOutstanding / totalOutstanding) * 100 : 0;
+
+  console.log('Dashboard render stats:', { totalCustomers, doneCustomers, pendingCustomers, repaymentRate, nplRatio });
 
   const colorMap: any = {
     indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100', shadow: 'shadow-indigo-500/20' },
