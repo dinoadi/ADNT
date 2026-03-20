@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Phone, Search, Filter, Check, X, 
-  AlertCircle, Edit2, Plus, Upload, Download, Trash2, 
+import {
+  Phone, Search, Filter, Check, X,
+  AlertCircle, Edit2, Plus, Upload, Download, Trash2,
   ChevronDown, ChevronUp, Save, RefreshCw, MoreVertical,
-  User, CreditCard, Calendar, Info
+  User, CreditCard, Calendar, Info, Square, CheckSquare
 } from 'lucide-react';
 import { read, utils } from 'xlsx';
 import { supabase } from '../supabase';
@@ -19,6 +19,13 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
   const [sortBy, setSortBy] = useState('nama');
   const [sortOrder, setSortOrder] = useState('asc');
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState('BELUM BAYAR');
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [bulkEditField, setBulkEditField] = useState('kolek');
+  const [bulkEditValue, setBulkEditValue] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -107,21 +114,133 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
     }
   };
 
+  const handleSelectCustomer = (no_rek: string) => {
+    if (selectedCustomers.includes(no_rek)) {
+      setSelectedCustomers(selectedCustomers.filter(id => id !== no_rek));
+    } else {
+      setSelectedCustomers([...selectedCustomers, no_rek]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedCustomers([]);
+      setSelectAll(false);
+    } else {
+      const allIds = filteredCustomers.map((c: any) => c.no_rek);
+      setSelectedCustomers(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    if (selectedCustomers.length === 0) {
+      alert('Pilih nasabah terlebih dahulu');
+      return;
+    }
+
+    if (window.confirm(`Ubah status ${selectedCustomers.length} nasabah menjadi ${bulkStatus}?`)) {
+      try {
+        await Promise.all(
+          selectedCustomers.map(no_rek => onStatusUpdate(no_rek, bulkStatus))
+        );
+        alert(`Status ${selectedCustomers.length} nasabah berhasil diubah`);
+        setSelectedCustomers([]);
+        setSelectAll(false);
+      } catch (error) {
+        alert('Gagal mengubah status');
+      }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCustomers.length === 0) {
+      alert('Pilih nasabah terlebih dahulu');
+      return;
+    }
+
+    if (window.confirm(`Hapus ${selectedCustomers.length} nasabah?`)) {
+      try {
+        await axios.post(`${API_URL}/api/customers/bulk-delete`, { no_reks: selectedCustomers });
+        alert(`${selectedCustomers.length} nasabah berhasil dihapus`);
+        setSelectedCustomers([]);
+        setSelectAll(false);
+        fetchCustomers();
+      } catch (error) {
+        alert('Gagal menghapus nasabah');
+      }
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (window.confirm('Hapus SEMUA data nasabah? Tindakan ini tidak dapat dibatalkan.')) {
+      try {
+        await axios.delete(`${API_URL}/api/customers`);
+        alert('Semua data nasabah berhasil dihapus');
+        setSelectedCustomers([]);
+        setSelectAll(false);
+        fetchCustomers();
+        setShowDeleteAllModal(false);
+      } catch (error) {
+        alert('Gagal menghapus semua data');
+      }
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (selectedCustomers.length === 0) {
+      alert('Pilih nasabah terlebih dahulu');
+      return;
+    }
+
+    if (!bulkEditValue) {
+      alert('Masukkan nilai untuk diubah');
+      return;
+    }
+
+    try {
+      const updateData: any = {};
+      
+      if (bulkEditField === 'kolek') {
+        updateData.kolek = parseInt(bulkEditValue);
+      } else if (bulkEditField === 'no_hp') {
+        updateData.no_hp = bulkEditValue;
+      } else if (bulkEditField === 'tanggal_jt') {
+        updateData.tanggal_jt = bulkEditValue;
+      }
+
+      await Promise.all(
+        selectedCustomers.map(no_rek =>
+          axios.put(`${API_URL}/api/customers/${no_rek}`, updateData)
+        )
+      );
+      
+      alert(`Kolom ${bulkEditField} untuk ${selectedCustomers.length} nasabah berhasil diubah`);
+      setSelectedCustomers([]);
+      setSelectAll(false);
+      setBulkEditValue('');
+      setShowBulkEditModal(false);
+      fetchCustomers();
+    } catch (error) {
+      alert('Gagal mengubah data');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Controls Header */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white/50 p-4 rounded-3xl border border-slate-100 backdrop-blur-sm">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
-            type="text" placeholder="Cari nama atau no rekening..." 
+          <input
+            type="text" placeholder="Cari nama atau no rekening..."
             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-medium text-sm"
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <select 
+          <select
             className="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-4 focus:ring-indigo-500/10"
             value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -130,7 +249,23 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
             <option value="DONE">Sudah Bayar</option>
           </select>
 
-          <button 
+          <button
+            onClick={() => setShowBulkActions(!showBulkActions)}
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+          >
+            <Filter size={18} />
+            Aksi Massal
+          </button>
+
+          <button
+            onClick={() => setShowDeleteAllModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-2xl font-black text-sm hover:bg-rose-700 transition-all shadow-lg shadow-rose-200"
+          >
+            <Trash2 size={18} />
+            Hapus Semua
+          </button>
+
+          <button
             onClick={handleImportClick} disabled={isUploading}
             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
           >
@@ -140,6 +275,61 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".xlsx,.xls" />
         </div>
       </div>
+
+      {/* Bulk Actions Panel */}
+      {showBulkActions && (
+        <div className="bg-white/80 p-4 rounded-3xl border border-slate-100 backdrop-blur-sm">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSelectAll}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-200 transition-all"
+              >
+                {selectAll ? <CheckSquare size={18} /> : <Square size={18} />}
+                {selectAll ? 'Batal Pilih Semua' : 'Pilih Semua'}
+              </button>
+              <span className="text-sm font-bold text-slate-600">
+                {selectedCustomers.length} terpilih
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <select
+                className="px-4 py-2 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-4 focus:ring-indigo-500/10"
+                value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}
+              >
+                <option value="BELUM BAYAR">Belum Bayar</option>
+                <option value="DONE">Sudah Bayar</option>
+                <option value="POTONG MANUAL">Potong Manual</option>
+              </select>
+
+              <button
+                onClick={handleBulkStatusUpdate}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+              >
+                <Save size={18} />
+                Update Status
+              </button>
+
+              <button
+                onClick={() => setShowBulkEditModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+              >
+                <Edit2 size={18} />
+                Edit Kolom
+              </button>
+
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-2xl font-black text-sm hover:bg-rose-700 transition-all shadow-lg shadow-rose-200"
+              >
+                <Trash2 size={18} />
+                Hapus Terpilih
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modern Card List */}
       <div className="grid grid-cols-1 gap-4">
@@ -151,6 +341,16 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
               className="group bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all"
             >
               <div className="flex flex-col md:flex-row md:items-center gap-6">
+                {/* Checkbox */}
+                <div className="flex items-center justify-center">
+                  <button
+                    onClick={() => handleSelectCustomer(c.no_rek)}
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all"
+                  >
+                    {selectedCustomers.includes(c.no_rek) ? <CheckSquare size={20} className="text-indigo-600" /> : <Square size={20} />}
+                  </button>
+                </div>
+
                 {/* Profile Section */}
                 <div className="flex items-center gap-4 flex-1">
                   <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors">
@@ -242,6 +442,73 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
               <div className="p-8 bg-slate-50 flex justify-end gap-4">
                 <button onClick={() => setIsPreviewOpen(false)} className="px-8 py-4 rounded-2xl font-black text-slate-500 hover:text-slate-800">Batal</button>
                 <button onClick={confirmImport} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-200">Simpan {importPreview.length} Data</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete All Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteAllModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowDeleteAllModal(false)} />
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl">
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="text-2xl font-black text-slate-800">Konfirmasi Hapus Semua</h3>
+                <button onClick={() => setShowDeleteAllModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={24} /></button>
+              </div>
+              <div className="p-8">
+                <p className="text-slate-600 font-bold mb-6">
+                  Apakah Anda yakin ingin menghapus SEMUA data nasabah? Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <div className="flex justify-end gap-4">
+                  <button onClick={() => setShowDeleteAllModal(false)} className="px-8 py-4 rounded-2xl font-black text-slate-500 hover:text-slate-800">Batal</button>
+                  <button onClick={handleDeleteAll} className="px-8 py-4 bg-rose-600 text-white rounded-2xl font-black shadow-xl shadow-rose-200">Hapus Semua Data</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bulk Edit Modal */}
+      <AnimatePresence>
+        {showBulkEditModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowBulkEditModal(false)} />
+            <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="relative bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl">
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="text-2xl font-black text-slate-800">Edit Massal</h3>
+                <button onClick={() => setShowBulkEditModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={24} /></button>
+              </div>
+              <div className="p-8">
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Pilih Kolom</label>
+                  <select
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    value={bulkEditField} onChange={(e) => setBulkEditField(e.target.value)}
+                  >
+                    <option value="kolek">Kolektibilitas</option>
+                    <option value="no_hp">No. HP</option>
+                    <option value="tanggal_jt">Tanggal Jatuh Tempo</option>
+                  </select>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Nilai Baru</label>
+                  <input
+                    type={bulkEditField === 'tanggal_jt' ? 'date' : bulkEditField === 'kolek' ? 'number' : 'text'}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    value={bulkEditValue} onChange={(e) => setBulkEditValue(e.target.value)}
+                    placeholder={bulkEditField === 'kolek' ? '1 atau 2' : bulkEditField === 'no_hp' ? '08123456789' : 'YYYY-MM-DD'}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <button onClick={() => setShowBulkEditModal(false)} className="px-8 py-4 rounded-2xl font-black text-slate-500 hover:text-slate-800">Batal</button>
+                  <button onClick={handleBulkEdit} className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-200">Simpan Perubahan</button>
+                </div>
               </div>
             </motion.div>
           </div>

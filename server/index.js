@@ -128,6 +128,19 @@ app.delete('/api/customers/:no_rek', async (req, res) => {
     }
 });
 
+// Delete All Customers
+app.delete('/api/customers', async (req, res) => {
+    try {
+        const result = await Customer.destroy({
+            where: {}
+        });
+        
+        res.json({ success: true, count: result });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Bulk Delete Customers
 app.post('/api/customers/bulk-delete', async (req, res) => {
     try {
