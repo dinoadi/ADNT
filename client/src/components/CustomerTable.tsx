@@ -40,6 +40,8 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
     kolek: 1
   });
 
+  const safeString = (value: unknown) => (typeof value === 'string' ? value : value == null ? '' : String(value));
+
   const filteredCustomers = (customers || []).filter((c: any) => {
     const matchesSearch = (c?.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (c?.no_rek || '').includes(searchTerm);
@@ -48,8 +50,8 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
     return matchesSearch && matchesStatus && matchesKolek;
   }).sort((a: any, b: any) => {
     const factor = sortOrder === 'asc' ? 1 : -1;
-    if (sortBy === 'nama') return a.nama.localeCompare(b.nama) * factor;
-    if (sortBy === 'tanggal_jt') return a.tanggal_jt.localeCompare(b.tanggal_jt) * factor;
+    if (sortBy === 'nama') return safeString(a?.nama).localeCompare(safeString(b?.nama)) * factor;
+    if (sortBy === 'tanggal_jt') return safeString(a?.tanggal_jt).localeCompare(safeString(b?.tanggal_jt)) * factor;
     return 0;
   });
 
@@ -93,13 +95,13 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
   };
 
   const handleStatusChange = async (c: any, status: string) => {
-    if (window.confirm(`Ubah status ${c.nama} menjadi ${status}?`)) {
+    if (window.confirm(`Ubah status ${safeString(c?.nama) || '-'} menjadi ${status}?`)) {
       await onStatusUpdate(c.no_rek, status);
     }
   };
 
   const handleDelete = async (c: any) => {
-    if (window.confirm(`Hapus nasabah ${c.nama}?`)) {
+    if (window.confirm(`Hapus nasabah ${safeString(c?.nama) || '-'}?`)) {
       await axios.delete(`${API_URL}/api/customers/${c.no_rek}`);
       fetchCustomers();
     }
@@ -142,9 +144,9 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
       {/* Modern Card List */}
       <div className="grid grid-cols-1 gap-4">
         <AnimatePresence mode="popLayout">
-          {filteredCustomers.map((c: any) => (
+          {filteredCustomers.map((c: any, i: number) => (
             <motion.div 
-              layout key={c.no_rek}
+              layout key={safeString(c?.no_rek) || `${safeString(c?.nama)}-${i}`}
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               className="group bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all"
             >
@@ -156,13 +158,13 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-black text-slate-800 truncate text-lg">{c.nama}</h4>
+                      <h4 className="font-black text-slate-800 truncate text-lg">{safeString(c?.nama) || '-'}</h4>
                       <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black tracking-widest uppercase ${c.kolek === 1 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                         KOL {c.kolek}
                       </span>
                     </div>
                     <p className="text-xs font-bold text-slate-400 flex items-center gap-2 uppercase tracking-tighter">
-                      <CreditCard size={12} /> {c.no_rek} • <Phone size={12} /> {c.no_hp || '-'}
+                      <CreditCard size={12} /> {safeString(c?.no_rek) || '-'} • <Phone size={12} /> {safeString(c?.no_hp) || '-'}
                     </p>
                   </div>
                 </div>
