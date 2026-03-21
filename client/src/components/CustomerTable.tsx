@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Save, RefreshCw, MoreVertical,
   User, CreditCard, Calendar, Info, Square, CheckSquare
 } from 'lucide-react';
-import { read, utils } from 'xlsx';
+import { read, utils, write } from 'xlsx';
 import { supabase } from '../supabase';
 
 const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers, isCompact = false }: any) => {
