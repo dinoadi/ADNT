@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Save, RefreshCw, MoreVertical,
   User, CreditCard, Calendar, Info, Square, CheckSquare
 } from 'lucide-react';
-import { read, utils, write } from 'xlsx';
+import { read, utils, writeFile } from 'xlsx';
 import { supabase } from '../supabase';
 
 const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers, isCompact = false }: any) => {
@@ -111,16 +111,7 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
     const ws = utils.json_to_sheet(template);
     const wb = { Sheets: { 'Template': ws }, SheetNames: ['Template'] };
-    const excelBuffer = utils.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'template_import_data.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    XLSX.writeFile(wb, 'template_import_data.xlsx');
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
