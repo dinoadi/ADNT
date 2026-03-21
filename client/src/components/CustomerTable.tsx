@@ -63,6 +63,66 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
   const handleImportClick = () => fileInputRef.current?.click();
 
+  const handleDownloadTemplate = () => {
+    const template = [
+      {
+        NO_REK: '001',
+        NM_SINGKAT: 'Ahmad Santoso',
+        NO_CIF: 'CIF001',
+        SALDO_AKHIR: 5000000,
+        TAGIHAN_POKOK: 500000,
+        TAGIHAN_BUNGA: 50000,
+        TUNGGAKAN_POKOK: 0,
+        TUNGGAKAN_BUNGA: 0,
+        KOLEK: 1,
+        TANGGAL_JT: '2026-03-25',
+        STATUS: 'AKTIF',
+        no_hp: '081234567890'
+      },
+      {
+        NO_REK: '002',
+        NM_SINGKAT: 'Budi Pratama',
+        NO_CIF: 'CIF002',
+        SALDO_AKHIR: 3000000,
+        TAGIHAN_POKOK: 300000,
+        TAGIHAN_BUNGA: 30000,
+        TUNGGAKAN_POKOK: 0,
+        TUNGGAKAN_BUNGA: 0,
+        KOLEK: 1,
+        TANGGAL_JT: '2026-03-26',
+        STATUS: 'AKTIF',
+        no_hp: '081234567891'
+      },
+      {
+        NO_REK: '003',
+        NM_SINGKAT: 'Citra Dewi',
+        NO_CIF: 'CIF003',
+        SALDO_AKHIR: 7000000,
+        TAGIHAN_POKOK: 700000,
+        TAGIHAN_BUNGA: 70000,
+        TUNGGAKAN_POKOK: 0,
+        TUNGGAKAN_BUNGA: 0,
+        KOLEK: 2,
+        TANGGAL_JT: '2026-03-27',
+        STATUS: 'AKTIF',
+        no_hp: '081234567892'
+      }
+    ];
+
+    const ws = utils.json_to_sheet(template);
+    const wb = { Sheets: { 'Template': ws }, SheetNames: ['Template'] };
+    const excelBuffer = utils.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'template_import_data.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -314,6 +374,14 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
           >
             <Trash2 size={18} />
             Hapus Semua
+          </button>
+
+          <button
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+          >
+            <Download size={18} />
+            Download Template
           </button>
 
           <button
