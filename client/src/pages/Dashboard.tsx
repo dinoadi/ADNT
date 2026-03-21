@@ -140,15 +140,28 @@ const Dashboard = () => {
       value: list.filter(c => parseInt(String(c?.kolek || '1').match(/\d+/)?.[0] || '1') === k).length
     }));
 
-    // Dummy Trend Data (Since we don't have historical data in DB yet)
-    const trendData = [
-      { name: 'Mon', rate: 65 }, { name: 'Tue', rate: 70 }, { name: 'Wed', rate: 68 },
-      { name: 'Thu', rate: 75 }, { name: 'Fri', rate: 82 }, { name: 'Sat', rate: 85 },
-      { name: 'Sun', rate: stats.repaymentRate.toFixed(1) }
-    ];
+    // Filter customers with due date today
+    const today = new Date();
+    const todayDay = today.getDate();
+    const todayMonth = today.getMonth() + 1;
+    const todayYear = today.getFullYear();
+    
+    const todayCustomers = list.filter(c => {
+      if (!c?.tanggal_jt) return false;
+      const jtDate = new Date(c.tanggal_jt);
+      return jtDate.getDate() === todayDay && 
+             jtDate.getMonth() + 1 === todayMonth && 
+             jtDate.getFullYear() === todayYear;
+    });
+
+    // Create trend data for today's customers
+    const trendData = todayCustomers.map((c, index) => ({
+      name: c.nama || `Nasabah ${index + 1}`,
+      rate: ((Number(c.tagihan_pokok) || 0) + (Number(c.tagihan_bunga) || 0))
+    }));
 
     return { kolekGroups, trendData };
-  }, [customers, stats.repaymentRate]);
+  }, [customers]);
 
   const COLORS = ['#6366f1', '#8b5cf6', '#f59e0b', '#ef4444', '#b91c1c'];
 
@@ -248,7 +261,7 @@ const Dashboard = () => {
                 <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
                   <h3 className="text-lg font-black text-slate-800 mb-8 flex items-center gap-2">
                     <Activity size={20} className="text-indigo-600" />
-                    Repayment Trend
+                    Tagihan Jatuh Tempo Hari Ini
                   </h3>
                   <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -260,11 +273,21 @@ const Dashboard = () => {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} dy={10} />
+                        <XAxis 
+                          dataKey="name" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 600}} 
+                          dy={10}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                        />
                         <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 600}} />
                         <Tooltip 
                           contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
                           itemStyle={{fontWeight: 800, color: '#6366f1'}}
+                          formatter={(value: any) => `Rp ${value.toLocaleString()}`}
                         />
                         <Area type="monotone" dataKey="rate" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorRate)" />
                       </AreaChart>

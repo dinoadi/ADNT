@@ -91,9 +91,27 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
   const confirmImport = async () => {
     try {
+      // Format data to match database structure
+      const formattedData = importPreview.map((row: any) => ({
+        no_rek: row.NO_REK || row.no_rek || '',
+        nama: row.NM_SINGKAT || row.nama || '',
+        no_cif: String(row.NO_CIF || row.no_cif || ''),
+        saldo_awal: Number(row.SALDO_AKHIR || row.saldo_awal || 0),
+        saldo_akhir: Number(row.SALDO_AKHIR || row.saldo_akhir || 0),
+        tagihan_pokok: Number(row.TAGIHAN_POKOK || row.tagihan_pokok || 0),
+        tagihan_bunga: Number(row.TAGIHAN_BUNGA || row.tagihan_bunga || 0),
+        tunggakan_pokok: Number(row.TUNGGAKAN_POKOK || row.tunggakan_pokok || 0),
+        tunggakan_bunga: Number(row.TUNGGAKAN_BUNGA || row.tunggakan_bunga || 0),
+        kolek: Number(row.KOLEK || row.kolek || 1),
+        tanggal_jt: row.TANGGAL_JT ? row.TANGGAL_JT.split('T')[0] : (row.tanggal_jt || ''),
+        status_pinjaman: row.STATUS || row.status_pinjaman || '',
+        payment_status: 'BELUM BAYAR',
+        no_hp: row.no_hp || ''
+      }));
+
       const { error } = await supabase
         .from('customers')
-        .upsert(importPreview, { onConflict: 'no_rek' });
+        .upsert(formattedData, { onConflict: 'no_rek' });
       
       if (error) {
         alert('Gagal menyimpan data: ' + error.message);
