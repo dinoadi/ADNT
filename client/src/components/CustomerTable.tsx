@@ -6,11 +6,8 @@ import {
   ChevronDown, ChevronUp, Save, RefreshCw, MoreVertical,
   User, CreditCard, Calendar, Info, Square, CheckSquare
 } from 'lucide-react';
-import { read, utils, writeFile } from 'xlsx';
+import { read, utils } from 'xlsx';
 import { supabase } from '../supabase';
-
-// Type declaration for XLSX global object
-declare const XLSX: any;
 
 const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers, isCompact = false }: any) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,9 +109,23 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
       }
     ];
 
-    const ws = utils.json_to_sheet(template);
-    const wb = { Sheets: { 'Template': ws }, SheetNames: ['Template'] };
-    XLSX.writeFile(wb, 'template_import_data.xlsx');
+    // Convert to CSV format
+    const headers = Object.keys(template[0]).join(',');
+    const rows = template.map(row => 
+      Object.values(row).join(',')
+    );
+    const csvContent = [headers, ...rows].join('\n');
+
+    // Create and download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'template_import_data.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
