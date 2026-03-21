@@ -9,6 +9,9 @@ import {
 import { read, utils, writeFile } from 'xlsx';
 import { supabase } from '../supabase';
 
+// Type declaration for XLSX global object
+declare const XLSX: any;
+
 const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers, isCompact = false }: any) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
