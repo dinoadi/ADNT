@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -14,8 +13,7 @@ import {
 } from 'lucide-react';
 import CustomerTable from '../components/CustomerTable';
 import CalendarView from '../components/CalendarView';
-
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3001');
+import { supabase } from '../supabase';
 
 const Dashboard = () => {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -36,8 +34,16 @@ const Dashboard = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/api/customers`);
-      setCustomers(res.data || []);
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching customers:', error);
+      } else {
+        setCustomers(data || []);
+      }
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
@@ -51,15 +57,53 @@ const Dashboard = () => {
 
   const handleStatusUpdate = async (no_rek: string, newStatus: string) => {
     try {
-      const res = await axios.post(`${API_URL}/api/customers/${no_rek}/payment`, { status: newStatus });
-      setCustomers(prev => prev.map(c => c.no_rek === no_rek ? res.data : c));
+      // Get current customer data
+      const { data: currentCustomer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('no_rek', no_rek)
+        .single();
+
+      if (!currentCustomer) {
+        console.error('Customer not found');
+        return;
+      }
+
+      const isPaying = ['DONE', 'POTONG MANUAL'].includes(newStatus);
+      const wasPaid = ['DONE', 'POTONG MANUAL'].includes(currentCustomer.payment_status);
+
+      let newSaldo = currentCustomer.saldo_akhir;
+      const effectiveBill = currentCustomer.tagihan_pokok || 0;
+
+      if (isPaying && !wasPaid) {
+        newSaldo = currentCustomer.saldo_akhir - effectiveBill;
+      } else if (!isPaying && wasPaid) {
+        newSaldo = currentCustomer.saldo_akhir + effectiveBill;
+      }
+
+      const { data, error } = await supabase
+        .from('customers')
+        .update({
+          payment_status: newStatus,
+          saldo_akhir: newSaldo,
+          updated_at: new Date().toISOString()
+        })
+        .eq('no_rek', no_rek)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Update failed:', error);
+      } else {
+        setCustomers(prev => prev.map(c => c.no_rek === no_rek ? data : c));
+      }
     } catch (error) {
       console.error('Update failed:', error);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate('/');
   };
 

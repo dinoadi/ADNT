@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone, Search, Filter, Check, X,
@@ -9,8 +8,6 @@ import {
 } from 'lucide-react';
 import { read, utils } from 'xlsx';
 import { supabase } from '../supabase';
-
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3001');
 
 const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers, isCompact = false }: any) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,11 +91,20 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
   const confirmImport = async () => {
     try {
-      await axios.post(`${API_URL}/api/customers/bulk`, importPreview);
-      alert('Data berhasil diimport');
-      setIsPreviewOpen(false);
-      fetchCustomers();
-    } catch (err) { alert('Gagal menyimpan data'); }
+      const { error } = await supabase
+        .from('customers')
+        .upsert(importPreview, { onConflict: 'no_rek' });
+      
+      if (error) {
+        alert('Gagal menyimpan data: ' + error.message);
+      } else {
+        alert('Data berhasil diimport');
+        setIsPreviewOpen(false);
+        fetchCustomers();
+      }
+    } catch (err) { 
+      alert('Gagal menyimpan data'); 
+    }
   };
 
   const handleStatusChange = async (c: any, status: string) => {
@@ -109,8 +115,16 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
   const handleDelete = async (c: any) => {
     if (window.confirm(`Hapus nasabah ${safeString(c?.nama) || '-'}?`)) {
-      await axios.delete(`${API_URL}/api/customers/${c.no_rek}`);
-      fetchCustomers();
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('no_rek', c.no_rek);
+      
+      if (error) {
+        alert('Gagal menghapus nasabah');
+      } else {
+        fetchCustomers();
+      }
     }
   };
 
@@ -161,11 +175,19 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
     if (window.confirm(`Hapus ${selectedCustomers.length} nasabah?`)) {
       try {
-        await axios.post(`${API_URL}/api/customers/bulk-delete`, { no_reks: selectedCustomers });
-        alert(`${selectedCustomers.length} nasabah berhasil dihapus`);
-        setSelectedCustomers([]);
-        setSelectAll(false);
-        fetchCustomers();
+        const { error } = await supabase
+          .from('customers')
+          .delete()
+          .in('no_rek', selectedCustomers);
+        
+        if (error) {
+          alert('Gagal menghapus nasabah');
+        } else {
+          alert(`${selectedCustomers.length} nasabah berhasil dihapus`);
+          setSelectedCustomers([]);
+          setSelectAll(false);
+          fetchCustomers();
+        }
       } catch (error) {
         alert('Gagal menghapus nasabah');
       }
@@ -175,12 +197,20 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
   const handleDeleteAll = async () => {
     if (window.confirm('Hapus SEMUA data nasabah? Tindakan ini tidak dapat dibatalkan.')) {
       try {
-        await axios.delete(`${API_URL}/api/customers`);
-        alert('Semua data nasabah berhasil dihapus');
-        setSelectedCustomers([]);
-        setSelectAll(false);
-        fetchCustomers();
-        setShowDeleteAllModal(false);
+        const { error } = await supabase
+          .from('customers')
+          .delete()
+          .neq('no_rek', null); // Delete all records
+        
+        if (error) {
+          alert('Gagal menghapus semua data');
+        } else {
+          alert('Semua data nasabah berhasil dihapus');
+          setSelectedCustomers([]);
+          setSelectAll(false);
+          fetchCustomers();
+          setShowDeleteAllModal(false);
+        }
       } catch (error) {
         alert('Gagal menghapus semua data');
       }
@@ -209,18 +239,21 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
         updateData.tanggal_jt = bulkEditValue;
       }
 
-      await Promise.all(
-        selectedCustomers.map(no_rek =>
-          axios.put(`${API_URL}/api/customers/${no_rek}`, updateData)
-        )
-      );
+      const { error } = await supabase
+        .from('customers')
+        .update(updateData)
+        .in('no_rek', selectedCustomers);
       
-      alert(`Kolom ${bulkEditField} untuk ${selectedCustomers.length} nasabah berhasil diubah`);
-      setSelectedCustomers([]);
-      setSelectAll(false);
-      setBulkEditValue('');
-      setShowBulkEditModal(false);
-      fetchCustomers();
+      if (error) {
+        alert('Gagal mengubah data');
+      } else {
+        alert(`Kolom ${bulkEditField} untuk ${selectedCustomers.length} nasabah berhasil diubah`);
+        setSelectedCustomers([]);
+        setSelectAll(false);
+        setBulkEditValue('');
+        setShowBulkEditModal(false);
+        fetchCustomers();
+      }
     } catch (error) {
       alert('Gagal mengubah data');
     }

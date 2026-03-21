@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, User, ArrowRight, ChevronLeft, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import { supabase } from '../supabase';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@adnt.com');
+  const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -15,22 +16,23 @@ const Login = () => {
     setIsLoading(true);
     setError('');
     
-    // Simulate network delay for effect
-    setTimeout(() => {
-        try {
-            if (username === 'admin' && password === 'admin') {
-              localStorage.setItem('token', 'demo-token');
-              navigate('/dashboard');
-            } else {
-              setError('Username atau password salah. Silakan coba lagi.');
-            }
-          } catch (error) {
-            console.error(error);
-            setError('Terjadi kesalahan sistem. Silakan coba nanti.');
-          } finally {
-            setIsLoading(false);
-          }
-    }, 1200);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError('Email atau password salah. Silakan coba lagi.');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Terjadi kesalahan sistem. Silakan coba nanti.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -91,19 +93,19 @@ const Login = () => {
             </AnimatePresence>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Username</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
                 </div>
                 <input
-                  type="text"
+                  type="email"
                   required
                   autoFocus
                   className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-white font-bold text-base placeholder:text-slate-600"
-                  placeholder="Enter username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
