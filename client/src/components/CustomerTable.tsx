@@ -131,24 +131,28 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploading(true);
 
-    if (supabase) {
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${new Date().getTime()}.${fileExt}`;
-        await supabase.storage.from('excel-uploads').upload(`uploads/${fileName}`, file);
-      } catch (err) { console.error('Upload failed', err); }
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      alert('Anda harus login terlebih dahulu');
+      return;
     }
+
+    setIsUploading(true);
 
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
         const wb = read(evt.target?.result, { type: 'binary' });
         const data = utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        console.log('Raw Excel data:', data); // Debug log
         setImportPreview(data);
         setIsPreviewOpen(true);
-      } catch (err) { alert('Gagal membaca Excel'); }
+      } catch (err) {
+        console.error('Excel read error:', err);
+        alert('Gagal membaca Excel: ' + (err as Error).message);
+      }
       finally { setIsUploading(false); }
     };
     reader.readAsBinaryString(file);
@@ -156,6 +160,13 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
   const confirmImport = async () => {
     try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Anda harus login terlebih dahulu');
+        return;
+      }
+
       // Format data to match database structure
       const formattedData = importPreview.map((row: any) => ({
         no_rek: row.NO_REK || row.no_rek || '',
@@ -174,19 +185,23 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
         no_hp: row.no_hp || ''
       }));
 
+      console.log('Formatted data:', formattedData); // Debug log
+
       const { error } = await supabase
         .from('customers')
         .upsert(formattedData, { onConflict: 'no_rek' });
-      
+
       if (error) {
+        console.error('Supabase error:', error);
         alert('Gagal menyimpan data: ' + error.message);
       } else {
         alert('Data berhasil diimport');
         setIsPreviewOpen(false);
         fetchCustomers();
       }
-    } catch (err) { 
-      alert('Gagal menyimpan data'); 
+    } catch (err) {
+      console.error('Import error:', err);
+      alert('Gagal menyimpan data: ' + (err as Error).message);
     }
   };
 
