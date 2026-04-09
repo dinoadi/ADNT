@@ -59,7 +59,7 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
     return 0;
   });
 
-  const computeAmount = (c: any) => (Number(c.tagihan_pokok) || 0) + (Number(c.tagihan_bunga) || 0);
+  const computeAmount = (c: any) => (Number(c.tagihan_pokok) || 0) + (Number(c.tunggakan_pokok) || 0) + (Number(c.tunggakan_bunga) || 0);
 
   const handleImportClick = () => fileInputRef.current?.click();
 
@@ -556,7 +556,7 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
                     {importPreview.map((row, i) => (
                       <tr key={i} className="text-sm">
                         <td className="py-4 font-bold text-slate-700">{row.nama}</td>
-                        <td className="py-4 font-black">Rp {((row.tagihan_pokok || 0) + (row.tagihan_bunga || 0)).toLocaleString()}</td>
+                        <td className="py-4 font-black">Rp {((row.tagihan_pokok || 0) + (row.tunggakan_pokok || 0) + (row.tunggakan_bunga || 0)).toLocaleString()}</td>
                         <td className="py-4 text-right"><Check className="ml-auto text-emerald-500" size={18} /></td>
                       </tr>
                     ))}
