@@ -46,6 +46,49 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
 
   const safeString = (value: unknown) => (typeof value === 'string' ? value : value == null ? '' : String(value));
 
+  const formatDate = (dateValue: any): string => {
+    if (!dateValue) return '';
+
+    // If it's already a string in YYYY-MM-DD format, return as is
+    if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      return dateValue;
+    }
+
+    // If it's a string with 'T' (ISO format), split and take date part
+    if (typeof dateValue === 'string' && dateValue.includes('T')) {
+      return dateValue.split('T')[0];
+    }
+
+    // If it's a Date object, format to YYYY-MM-DD
+    if (dateValue instanceof Date) {
+      return dateValue.toISOString().split('T')[0];
+    }
+
+    // If it's a number (Excel date serial), convert to date
+    if (typeof dateValue === 'number') {
+      // Excel dates are days since 1900-01-01, but need to handle leap year bug
+      const excelEpoch = new Date(1900, 0, 1);
+      const days = dateValue - 1; // Excel incorrectly counts 1900 as leap year
+      const date = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+      return date.toISOString().split('T')[0];
+    }
+
+    // For other string formats, try to parse
+    if (typeof dateValue === 'string') {
+      try {
+        const parsed = new Date(dateValue);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toISOString().split('T')[0];
+        }
+      } catch (e) {
+        // If parsing fails, return original string
+        return dateValue;
+      }
+    }
+
+    return '';
+  };
+
   const filteredCustomers = (customers || []).filter((c: any) => {
     const matchesSearch = (c?.nama || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (c?.no_rek || '').includes(searchTerm);
@@ -75,6 +118,7 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
         TUNGGAKAN_POKOK: 0,
         TUNGGAKAN_BUNGA: 0,
         KOLEK: 1,
+        TANGGAL_PENCAIRAN: '2026-01-25',
         TANGGAL_JT: '2026-03-25',
         STATUS: 'AKTIF',
         no_hp: '081234567890'
@@ -89,6 +133,7 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
         TUNGGAKAN_POKOK: 0,
         TUNGGAKAN_BUNGA: 0,
         KOLEK: 1,
+        TANGGAL_PENCAIRAN: '2026-01-26',
         TANGGAL_JT: '2026-03-26',
         STATUS: 'AKTIF',
         no_hp: '081234567891'
@@ -103,6 +148,7 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
         TUNGGAKAN_POKOK: 0,
         TUNGGAKAN_BUNGA: 0,
         KOLEK: 2,
+        TANGGAL_PENCAIRAN: '2026-01-27',
         TANGGAL_JT: '2026-03-27',
         STATUS: 'AKTIF',
         no_hp: '081234567892'
@@ -179,7 +225,8 @@ const CustomerTable = ({ customers, onStatusUpdate, selectedDate, fetchCustomers
         tunggakan_pokok: Number(row.TUNGGAKAN_POKOK || row.tunggakan_pokok || 0),
         tunggakan_bunga: Number(row.TUNGGAKAN_BUNGA || row.tunggakan_bunga || 0),
         kolek: Number(row.KOLEK || row.kolek || 1),
-        tanggal_jt: row.TANGGAL_JT ? row.TANGGAL_JT.split('T')[0] : (row.tanggal_jt || ''),
+        tanggal_pencairan: formatDate(row.TANGGAL_PENCAIRAN || row.tanggal_pencairan),
+        tanggal_jt: formatDate(row.TANGGAL_JT || row.tanggal_jt),
         status_pinjaman: row.STATUS || row.status_pinjaman || '',
         payment_status: 'BELUM BAYAR',
         no_hp: row.no_hp || ''

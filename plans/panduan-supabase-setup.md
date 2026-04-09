@@ -58,6 +58,7 @@ CREATE TABLE customers (
   tunggakan_pokok FLOAT DEFAULT 0,
   tunggakan_bunga FLOAT DEFAULT 0,
   kolek INTEGER DEFAULT 1,
+  tanggal_pencairan VARCHAR(255),
   tanggal_jt VARCHAR(255),
   status_pinjaman VARCHAR(255),
   payment_status VARCHAR(50) DEFAULT 'BELUM BAYAR' CHECK (payment_status IN ('BELUM BAYAR', 'DONE', 'POTONG MANUAL')),
@@ -123,10 +124,10 @@ Jika Anda hanya ingin testing dulu, bisa insert beberapa data dummy:
 
 ```sql
 -- Insert data dummy untuk testing
-INSERT INTO customers (no_rek, nama, no_cif, saldo_awal, saldo_akhir, tagihan_pokok, tagihan_bunga, tunggakan_pokok, tunggakan_bunga, kolek, tanggal_jt, status_pinjaman, payment_status, no_hp) VALUES
-('001', 'Ahmad Santoso', 'CIF001', 5000000, 5000000, 500000, 50000, 0, 0, 1, '2026-03-25', 'AKTIF', 'BELUM BAYAR', '081234567890'),
-('002', 'Budi Pratama', 'CIF002', 3000000, 3000000, 300000, 30000, 0, 0, 1, '2026-03-26', 'AKTIF', 'BELUM BAYAR', '081234567891'),
-('003', 'Citra Dewi', 'CIF003', 7000000, 7000000, 700000, 70000, 0, 0, 2, '2026-03-27', 'AKTIF', 'BELUM BAYAR', '081234567892');
+INSERT INTO customers (no_rek, nama, no_cif, saldo_awal, saldo_akhir, tagihan_pokok, tagihan_bunga, tunggakan_pokok, tunggakan_bunga, kolek, tanggal_pencairan, tanggal_jt, status_pinjaman, payment_status, no_hp) VALUES
+('001', 'Ahmad Santoso', 'CIF001', 5000000, 5000000, 500000, 50000, 0, 0, 1, '2026-01-25', '2026-03-25', 'AKTIF', 'BELUM BAYAR', '081234567890'),
+('002', 'Budi Pratama', 'CIF002', 3000000, 3000000, 300000, 30000, 0, 0, 1, '2026-01-26', '2026-03-26', 'AKTIF', 'BELUM BAYAR', '081234567891'),
+('003', 'Citra Dewi', 'CIF003', 7000000, 7000000, 700000, 70000, 0, 0, 2, '2026-01-27', '2026-03-27', 'AKTIF', 'BELUM BAYAR', '081234567892');
 ```
 
 ### 3.1 Verifikasi Data
